@@ -74,26 +74,18 @@ impl Piece {
                 (1, 0),
                 (1, 1),
             ],
-            (PieceType::Rook, _) => {
-                let mut move_vec = Vec::new();
-                for i in 1..BOARD_SIZE as i32 {
-                    move_vec.push((0, i));
-                    move_vec.push((0, -i));
-                    move_vec.push((i, 0));
-                    move_vec.push((-i, 0));
-                }
-                move_vec
-            }
-            (PieceType::Bishop, _) => {
-                let mut move_vec = Vec::new();
-                for i in 1..BOARD_SIZE as i32 {
-                    move_vec.push((i, i));
-                    move_vec.push((i, -i));
-                    move_vec.push((-i, i));
-                    move_vec.push((-i, -i));
-                }
-                move_vec
-            }
+            (PieceType::Rook, _) => vec![
+                (-(BOARD_SIZE as i32), 0),
+                (0, -(BOARD_SIZE as i32)),
+                (0, BOARD_SIZE as i32),
+                (BOARD_SIZE as i32, 0),
+            ],
+            (PieceType::Bishop, _) => vec![
+                (-(BOARD_SIZE as i32), -(BOARD_SIZE as i32)),
+                (-(BOARD_SIZE as i32), BOARD_SIZE as i32),
+                (BOARD_SIZE as i32, -(BOARD_SIZE as i32)),
+                (BOARD_SIZE as i32, BOARD_SIZE as i32),
+            ],
             (
                 PieceType::Gold
                 | PieceType::PromotedKnight
@@ -101,9 +93,7 @@ impl Piece {
                 | PieceType::PromotedSilver
                 | PieceType::PromotedPawn,
                 Color::Black,
-            ) => {
-                vec![(-1, 0), (-1, 1), (0, -1), (0, 1), (1, 1), (1, 0)]
-            }
+            ) => vec![(-1, 0), (-1, 1), (0, -1), (0, 1), (1, 0), (1, 1)],
             (
                 PieceType::Gold
                 | PieceType::PromotedKnight
@@ -111,72 +101,76 @@ impl Piece {
                 | PieceType::PromotedSilver
                 | PieceType::PromotedPawn,
                 Color::White,
-            ) => {
-                vec![(-1, -1), (-1, 0), (0, -1), (0, 1), (1, -1), (1, 0)]
-            }
-            (PieceType::Silver, Color::Black) => {
-                vec![(-1, -1), (-1, 1), (0, 1), (1, -1), (1, 1)]
-            }
-            (PieceType::Silver, Color::White) => {
-                vec![(-1, -1), (-1, 1), (0, -1), (1, -1), (1, 1)]
-            }
+            ) => vec![(-1, -1), (-1, 0), (0, -1), (0, 1), (1, -1), (1, 0)],
+            (PieceType::Silver, Color::Black) => vec![(-1, -1), (-1, 1), (0, 1), (1, -1), (1, 1)],
+            (PieceType::Silver, Color::White) => vec![(-1, -1), (-1, 1), (0, -1), (1, -1), (1, 1)],
             (PieceType::Knight, Color::Black) => vec![(-1, 2), (1, 2)],
             (PieceType::Knight, Color::White) => vec![(-1, -2), (1, -2)],
-            (PieceType::Lance, Color::Black) => {
-                let mut move_vec = Vec::new();
-                for i in 1..BOARD_SIZE as i32 {
-                    move_vec.push((0, i));
-                }
-                move_vec
-            }
-            (PieceType::Lance, Color::White) => {
-                let mut move_vec = Vec::new();
-                for i in 1..BOARD_SIZE as i32 {
-                    move_vec.push((0, -i));
-                }
-                move_vec
-            }
+            (PieceType::Lance, Color::Black) => vec![(0, BOARD_SIZE as i32)],
+            (PieceType::Lance, Color::White) => vec![(0, -(BOARD_SIZE as i32))],
             (PieceType::Pawn, Color::Black) => vec![(0, 1)],
             (PieceType::Pawn, Color::White) => vec![(0, -1)],
-            (PieceType::Dragon, _) => {
-                let mut move_vec = Vec::new();
-                for i in 1..BOARD_SIZE as i32 {
-                    move_vec.push((0, i));
-                    move_vec.push((0, -i));
-                    move_vec.push((i, 0));
-                    move_vec.push((-i, 0));
-                }
-                move_vec.push((-1, -1));
-                move_vec.push((-1, 1));
-                move_vec.push((1, -1));
-                move_vec.push((1, 1));
-                move_vec
-            }
-            (PieceType::Horse, _) => {
-                let mut move_vec = Vec::new();
-                for i in 1..BOARD_SIZE as i32 {
-                    move_vec.push((i, i));
-                    move_vec.push((i, -i));
-                    move_vec.push((-i, i));
-                    move_vec.push((-i, -i));
-                }
-                move_vec.push((-1, 0));
-                move_vec.push((0, -1));
-                move_vec.push((0, 1));
-                move_vec.push((1, 0));
-                move_vec
-            }
+            (PieceType::Dragon, _) => vec![
+                (-(BOARD_SIZE as i32), 0),
+                (-1, -1),
+                (-1, 1),
+                (0, -(BOARD_SIZE as i32)),
+                (0, BOARD_SIZE as i32),
+                (1, -1),
+                (1, 1),
+                (BOARD_SIZE as i32, 0),
+            ],
+            (PieceType::Horse, _) => vec![
+                (-(BOARD_SIZE as i32), -(BOARD_SIZE as i32)),
+                (-(BOARD_SIZE as i32), BOARD_SIZE as i32),
+                (-1, 0),
+                (0, -1),
+                (0, 1),
+                (1, 0),
+                (BOARD_SIZE as i32, -(BOARD_SIZE as i32)),
+                (BOARD_SIZE as i32, BOARD_SIZE as i32),
+            ],
         }
     }
 
     pub fn create_move_range(&self, position: Position, board: &Board) -> Vec<Position> {
         let mut move_range = Vec::new();
-        for (x, y) in self.move_vec() {
-            let new_position = Position::new(position.x + x, position.y + y);
-            if new_position.is_valid() {
-                let piece = board[new_position.y as usize][new_position.x as usize];
-                if piece.is_none() || piece.unwrap().color != self.color {
-                    move_range.push(new_position);
+        for (vx, vy) in self.move_vec() {
+            if self.piece_type == PieceType::Knight {
+                let new_position = Position::new(position.x + vx, position.y + vy);
+                if new_position.is_valid() {
+                    let piece = board[new_position.y as usize][new_position.x as usize];
+                    // 空きマスなら動ける
+                    if piece.is_none() || piece.unwrap().color != self.color {
+                        move_range.push(new_position);
+                    }
+                }
+                continue;
+            }
+            let dx = calc_delta(vx);
+            let dy = calc_delta(vy);
+            //println!("d: [{}, {}], v: [{}, {}]", dx, dy, vx, vy);
+            let mut x = 0;
+            let mut y = 0;
+            loop {
+                x += dx;
+                y += dy;
+                //println!("p: [{},{}], d: [{}, {}], v: [{}, {}]", x, y, dx, dy, vx, vy);
+                let new_position = Position::new(position.x + x, position.y + y);
+                if new_position.is_valid() {
+                    let piece = board[new_position.y as usize][new_position.x as usize];
+                    // 空きマスなら動ける
+                    if piece.is_none() {
+                        move_range.push(new_position);
+                    } else if piece.unwrap().color != self.color {
+                        move_range.push(new_position);
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+                if (dx != 0 && x == vx) || (dy != 0 && y == vy) {
+                    break;
                 }
             }
         }
@@ -185,5 +179,15 @@ impl Piece {
             self, position.x, position.y, move_range
         );
         move_range
+    }
+}
+
+fn calc_delta(v: i32) -> i32 {
+    if v > 0 {
+        1
+    } else if v < 0 {
+        -1
+    } else {
+        0
     }
 }
