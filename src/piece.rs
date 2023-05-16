@@ -1,6 +1,5 @@
-use std::fmt;
-
 use crate::board::{Board, Position, BOARD_SIZE};
+use std::fmt;
 
 #[allow(unused)]
 // 駒の種類を表す列挙型
@@ -29,11 +28,20 @@ pub enum Color {
     White,
 }
 
+impl Color {
+    pub fn opponent(&self) -> Self {
+        match self {
+            Color::Black => Color::White,
+            Color::White => Color::Black,
+        }
+    }
+}
+
 // 駒を表す構造体
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Piece {
-    piece_type: PieceType,
-    color: Color,
+    pub piece_type: PieceType,
+    pub color: Color,
 }
 
 impl fmt::Display for Piece {

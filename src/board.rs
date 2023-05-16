@@ -19,13 +19,6 @@ impl Position {
     }
 }
 
-// 合法な手を表す構造体
-#[derive(Debug)]
-pub struct LegalMove {
-    pub from: Position,
-    pub to: Position,
-}
-
 // ボード上の駒配置を表す2次元配列
 pub type Board = [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE];
 
@@ -96,11 +89,14 @@ fn create_initial_board_white(mut board: Board) -> Board {
 }
 
 // ボード上の駒の移動範囲を生成する関数
-pub fn create_move_range(board: &Board) -> MoveRange {
+pub fn create_move_range(board: &Board, turn: Color) -> MoveRange {
     let mut move_range: MoveRange = vec![vec![None; BOARD_SIZE]; BOARD_SIZE];
     for y in 0..BOARD_SIZE {
         for x in 0..BOARD_SIZE {
             if let Some(piece) = board[y][x] {
+                if piece.color != turn {
+                    continue;
+                }
                 move_range[y][x] =
                     Some(piece.create_move_range(Position::new(x as i32, y as i32), board));
             }
