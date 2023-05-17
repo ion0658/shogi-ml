@@ -71,7 +71,7 @@ fn create_initial_board_black(mut board: Board) -> Board {
     board[0][0] = Some(Piece::new(PieceType::Lance, Color::Black));
     board[0][8] = Some(Piece::new(PieceType::Lance, Color::Black));
     // 飛車
-    board[7][4] = Some(Piece::new(PieceType::Rook, Color::Black));
+    board[1][1] = Some(Piece::new(PieceType::Rook, Color::Black));
     // 角行
     board[1][7] = Some(Piece::new(PieceType::Bishop, Color::Black));
     // 歩兵
@@ -99,7 +99,7 @@ fn create_initial_board_white(mut board: Board) -> Board {
     board[8][0] = Some(Piece::new(PieceType::Lance, Color::White));
     board[8][8] = Some(Piece::new(PieceType::Lance, Color::White));
     // 飛車
-    board[1][4] = Some(Piece::new(PieceType::Rook, Color::White));
+    board[7][7] = Some(Piece::new(PieceType::Rook, Color::White));
     // 角行
     board[7][1] = Some(Piece::new(PieceType::Bishop, Color::White));
     // 歩兵
@@ -148,16 +148,17 @@ pub fn create_move_range(boards: &Boards, turn: Color) -> Vec<LegalMove> {
         .collect()
 }
 
-// pub fn get_piece_count(boards: &Boards) -> usize {
-//     boards
-//         .par_iter()
-//         .flat_map(|board| {
-//             board
-//                 .par_iter()
-//                 .flat_map(|row| row.par_iter().filter(|piece| piece.is_some()))
-//         })
-//         .count()
-// }
+#[allow(unused)]
+pub fn get_piece_count(boards: &Boards) -> usize {
+    boards
+        .par_iter()
+        .flat_map(|board| {
+            board
+                .par_iter()
+                .flat_map(|row| row.par_iter().filter(|piece| piece.is_some()))
+        })
+        .count()
+}
 
 // 駒を動かしその結果を返す関数
 pub fn move_piece(mut boards: Boards, from: Position, to: Position) -> Boards {
@@ -220,4 +221,16 @@ pub fn select_best_board(boards: &[Boards]) -> Boards {
     let len = boards.len();
     let index = rng.gen_range(0..len);
     boards[index].clone()
+}
+
+// 二歩判定
+pub fn is_nifu(board: &Board, m: LegalMove, color: Color) -> bool {
+    for y in 0..BOARD_SIZE {
+        if let Some(piece) = board[y][m.to.x as usize] {
+            if piece.piece_type == PieceType::Pawn && piece.color == color {
+                return true;
+            }
+        }
+    }
+    false
 }

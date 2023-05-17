@@ -15,8 +15,6 @@ pub enum GameState {
 pub struct Game {
     boards: Boards,
     turn: Color,
-    _hand_black: Vec<PieceType>,
-    _hand_white: Vec<PieceType>,
 }
 
 impl Game {
@@ -24,8 +22,6 @@ impl Game {
         Game {
             boards: create_initial_board(),
             turn: Color::Black,
-            _hand_black: Vec::new(),
-            _hand_white: Vec::new(),
         }
     }
     pub fn print(&self) {

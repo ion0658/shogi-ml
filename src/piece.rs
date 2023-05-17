@@ -1,4 +1,4 @@
-use crate::board::{Board, LegalMove, Position, BOARD_SIZE};
+use crate::board::{is_nifu, Board, LegalMove, Position, BOARD_SIZE};
 use rayon::prelude::*;
 use std::fmt;
 
@@ -153,10 +153,18 @@ impl Piece {
                     .enumerate()
                     .filter_map(|(x, piece)| match piece {
                         Some(_) => None,
-                        None => Some(LegalMove {
-                            from: position,
-                            to: Position::new(x as i32, y as i32, 0),
-                        }),
+                        None => {
+                            let m = LegalMove {
+                                from: position,
+                                to: Position::new(x as i32, y as i32, 0),
+                            };
+                            if self.piece_type == PieceType::Pawn && is_nifu(board, m, self.color) {
+                                None
+                            } else {
+                                Some(m)
+                            }
+                            //Some(m)
+                        }
                     })
                     .collect::<Vec<_>>();
                 concat_vec(move_ranges, new_ranges)
@@ -240,3 +248,15 @@ pub fn concat_vec<T>(v1: Vec<T>, v2: Vec<T>) -> Vec<T> {
     v.extend(v2);
     v
 }
+//
+// if self.piece_type == PieceType::Pawn {
+//     Some(LegalMove {
+//         from: position,
+//         to: Position::new(x as i32, y as i32, 0),
+//     })
+// } else {
+//     Some(LegalMove {
+//         from: position,
+//         to: Position::new(x as i32, y as i32, 0),
+//     })
+// }
