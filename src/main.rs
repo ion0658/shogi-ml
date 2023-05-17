@@ -6,14 +6,12 @@ use anyhow::Result;
 use game::Game;
 
 fn main() -> Result<()> {
+    println!("Game Start");
     let mut game = Game::new();
-    game.print();
     loop {
         #[cfg(debug_assertions)]
         game.print();
-
-        let state = game.next();
-        match state {
+        match game.next() {
             game::GameState::Checkmate(color) => {
                 println!("Checkmate! {:?} is Winner!", color);
                 game.print();
@@ -22,13 +20,6 @@ fn main() -> Result<()> {
             _ => {}
         }
     }
-
-    // game.next();
-    // game.print();
-    // game.next();
-    // game.print();
-    // game.next();
-    // game.print();
 
     Ok(())
 }

@@ -15,6 +15,7 @@ pub enum GameState {
 pub struct Game {
     boards: Boards,
     turn: Color,
+    boards_record: Vec<Boards>,
 }
 
 impl Game {
@@ -22,6 +23,7 @@ impl Game {
         Game {
             boards: create_initial_board(),
             turn: Color::Black,
+            boards_record: vec![create_initial_board()],
         }
     }
     pub fn print(&self) {
@@ -33,7 +35,7 @@ impl Game {
         let next_boards = move_range
             .par_iter()
             .filter_map(|range| {
-                let boards = move_piece(self.boards, range.from, range.to);
+                let boards = move_piece(self.boards, *range);
                 let checked = Self::is_checked(&boards[0], self.turn);
                 if checked {
                     None
@@ -47,6 +49,7 @@ impl Game {
         }
         let best_boards = select_best_board(&next_boards);
         self.boards = best_boards;
+        self.boards_record.push(best_boards);
         self.turn = self.turn.opponent();
 
         GameState::Playing

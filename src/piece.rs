@@ -5,6 +5,7 @@ use std::fmt;
 #[allow(unused)]
 // 駒の種類を表す列挙型
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(i32)]
 pub enum PieceType {
     King,
     Rook,
@@ -69,6 +70,38 @@ impl fmt::Display for Piece {
 impl Piece {
     pub fn new(piece_type: PieceType, color: Color) -> Piece {
         Piece { piece_type, color }
+    }
+
+    pub fn can_revolte(&self) -> bool {
+        match self.piece_type {
+            PieceType::Silver => true,
+            PieceType::Knight => true,
+            PieceType::Lance => true,
+            PieceType::Pawn => true,
+            _ => false,
+        }
+    }
+
+    //成れる場合は成る
+    pub fn revolute(&self) -> Piece {
+        match self.piece_type {
+            PieceType::Silver => Piece::new(PieceType::PromotedSilver, self.color),
+            PieceType::Knight => Piece::new(PieceType::PromotedKnight, self.color),
+            PieceType::Lance => Piece::new(PieceType::PromotedLance, self.color),
+            PieceType::Pawn => Piece::new(PieceType::PromotedPawn, self.color),
+            _ => *self,
+        }
+    }
+
+    // 成りごまを元に戻す
+    pub fn revolute_back(&self) -> Piece {
+        match self.piece_type {
+            PieceType::PromotedSilver => Piece::new(PieceType::Silver, self.color),
+            PieceType::PromotedKnight => Piece::new(PieceType::Knight, self.color),
+            PieceType::PromotedLance => Piece::new(PieceType::Lance, self.color),
+            PieceType::PromotedPawn => Piece::new(PieceType::Pawn, self.color),
+            _ => *self,
+        }
     }
 
     fn move_vec(&self) -> Vec<(i32, i32)> {
@@ -157,6 +190,7 @@ impl Piece {
                             let m = LegalMove {
                                 from: position,
                                 to: Position::new(x as i32, y as i32, 0),
+                                revolte: false,
                             };
                             if self.piece_type == PieceType::Pawn && is_nifu(board, m, self.color) {
                                 None
@@ -192,16 +226,36 @@ impl Piece {
                         let piece = board[new_position.y as usize][new_position.x as usize];
                         if piece.is_none() {
                             // 空きマスなら動ける
-                            move_range.push(LegalMove {
+                            let m = LegalMove {
                                 from: position,
                                 to: new_position,
-                            });
+                                revolte: false,
+                            };
+                            move_range.push(m);
+                            if m.can_revolte(self.color) && self.can_revolte() {
+                                let rm = LegalMove {
+                                    from: position,
+                                    to: new_position,
+                                    revolte: true,
+                                };
+                                move_range.push(rm);
+                            }
                         } else if piece.unwrap().color != self.color {
                             // 相手の駒ならそこまで動けるが、それ以上は動けない
-                            move_range.push(LegalMove {
+                            let m = LegalMove {
                                 from: position,
                                 to: new_position,
-                            });
+                                revolte: false,
+                            };
+                            move_range.push(m);
+                            if m.can_revolte(self.color) && self.can_revolte() {
+                                let rm = LegalMove {
+                                    from: position,
+                                    to: new_position,
+                                    revolte: true,
+                                };
+                                move_range.push(rm);
+                            }
                             break;
                         } else {
                             // 自分の駒ならそこまで動けない

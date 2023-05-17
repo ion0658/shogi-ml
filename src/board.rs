@@ -44,6 +44,32 @@ pub type Boards = [Board; PAGE_SIZE];
 pub struct LegalMove {
     pub from: Position,
     pub to: Position,
+    pub revolte: bool,
+}
+
+impl LegalMove {
+    // 成れるかどうかを判定する関数
+    pub fn can_revolte(&self, turn: Color) -> bool {
+        if self.from.z == 1 {
+            return false;
+        }
+        match turn {
+            Color::Black => {
+                if self.from.y >= 6 || self.to.y >= 6 {
+                    return true;
+                } else {
+                    false
+                }
+            }
+            Color::White => {
+                if self.from.y <= 2 || self.to.y <= 2 {
+                    return true;
+                } else {
+                    false
+                }
+            }
+        }
+    }
 }
 
 pub fn create_initial_board() -> Boards {
@@ -161,11 +187,23 @@ pub fn get_piece_count(boards: &Boards) -> usize {
 }
 
 // 駒を動かしその結果を返す関数
-pub fn move_piece(mut boards: Boards, from: Position, to: Position) -> Boards {
-    let current_piece = boards[0][to.y as usize][to.x as usize];
-    boards[0][to.y as usize][to.x as usize] =
-        boards[from.z as usize][from.y as usize][from.x as usize];
-    boards[from.z as usize][from.y as usize][from.x as usize] = None;
+pub fn move_piece(mut boards: Boards, legal_move: LegalMove) -> Boards {
+    let current_piece = boards[0][legal_move.to.y as usize][legal_move.to.x as usize];
+    // 駒を移動する
+    // 成る場合は成る
+
+    boards[0][legal_move.to.y as usize][legal_move.to.x as usize] = if legal_move.revolte {
+        boards[legal_move.from.z as usize][legal_move.from.y as usize][legal_move.from.x as usize]
+            .unwrap()
+            .revolute()
+            .into()
+    } else {
+        boards[legal_move.from.z as usize][legal_move.from.y as usize][legal_move.from.x as usize]
+    };
+    // 移動元を空欄にする
+    boards[legal_move.from.z as usize][legal_move.from.y as usize][legal_move.from.x as usize] =
+        None;
+    // 駒を取った場合の処理
     if let Some(mut piece) = current_piece {
         piece.color = piece.color.opponent();
         match piece.color {
@@ -173,7 +211,7 @@ pub fn move_piece(mut boards: Boards, from: Position, to: Position) -> Boards {
                 'outer: for y in 0..BOARD_SIZE {
                     for x in 0..BOARD_SIZE {
                         if boards[1][y][x].is_none() {
-                            boards[1][y][x] = Some(piece);
+                            boards[1][y][x] = Some(piece.revolute_back());
                             break 'outer;
                         }
                     }
@@ -183,7 +221,7 @@ pub fn move_piece(mut boards: Boards, from: Position, to: Position) -> Boards {
                 'outer: for y in (0..BOARD_SIZE).rev() {
                     for x in (0..BOARD_SIZE).rev() {
                         if boards[1][y][x].is_none() {
-                            boards[1][y][x] = Some(piece);
+                            boards[1][y][x] = Some(piece.revolute_back());
                             break 'outer;
                         }
                     }
@@ -195,9 +233,12 @@ pub fn move_piece(mut boards: Boards, from: Position, to: Position) -> Boards {
 }
 
 pub fn print_boards(boards: &Boards) {
-    let mut board_data = format!("{:->46}\n", "");
+    let mut board_data = format!(
+        "{:->46}\n|{:>21}\x1b[31m黒\x1b[m{:>21}|\n{:->46}\n",
+        "", "", "", ""
+    );
 
-    boards.iter().for_each(|board| {
+    boards.iter().enumerate().for_each(|(z, board)| {
         board.iter().for_each(|row| {
             row.iter().for_each(|p| match p {
                 None => board_data.push_str(&format!("|{: >4}", "")),
@@ -211,7 +252,15 @@ pub fn print_boards(boards: &Boards) {
             });
             board_data.push_str("|\n");
         });
-        board_data.push_str(&format!("{:->46}\n", ""));
+        if z == 0 {
+            board_data.push_str(&format!("{:->46}\n|{:>21}白{:>21}|\n", "", "", "",));
+            board_data.push_str(&format!(
+                "{:->46}\n|{:>19}持ち駒{:>19}|\n{:->46}\n",
+                "", "", "", ""
+            ));
+        } else {
+            board_data.push_str(&format!("{:->46}\n", "",));
+        }
     });
     println!("{}", board_data);
 }
