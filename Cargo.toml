@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+rand = { version = "0.8.5", features = ["std", "std_rng"] }
+rayon = "1.7.0"

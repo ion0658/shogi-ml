@@ -1,4 +1,5 @@
-use crate::board::{Board, Position, BOARD_SIZE};
+use crate::board::{Board, LegalMove, Position, BOARD_SIZE};
+use rayon::prelude::*;
 use std::fmt;
 
 #[allow(unused)]
@@ -141,61 +142,101 @@ impl Piece {
         }
     }
 
-    pub fn create_move_range(&self, position: Position, board: &Board) -> Vec<Position> {
-        let mut move_range = Vec::new();
-        for (vx, vy) in self.move_vec() {
-            if self.piece_type == PieceType::Knight {
-                let new_position = Position::new(position.x + vx, position.y + vy);
-                if new_position.is_valid() {
-                    let piece = board[new_position.y as usize][new_position.x as usize];
-                    // 空きマスなら動ける
-                    if piece.is_none() || piece.unwrap().color != self.color {
-                        move_range.push(new_position);
+    pub fn create_put_range(&self, position: Position, board: &Board) -> Vec<LegalMove> {
+        board
+            .par_iter()
+            .enumerate()
+            .flat_map(|(y, row)| {
+                let move_ranges = vec![];
+                let new_ranges = row
+                    .par_iter()
+                    .enumerate()
+                    .filter_map(|(x, piece)| match piece {
+                        Some(_) => None,
+                        None => Some(LegalMove {
+                            from: position,
+                            to: Position::new(x as i32, y as i32, 0),
+                        }),
+                    })
+                    .collect::<Vec<_>>();
+                concat_vec(move_ranges, new_ranges)
+            })
+            .collect()
+    }
+
+    pub fn create_move_range(&self, position: Position, board: &Board) -> Vec<LegalMove> {
+        self.move_vec()
+            .par_iter()
+            .flat_map(|(vx, vy)| {
+                let mut move_range = vec![];
+                let dx = calc_delta(*vx);
+                let dy = calc_delta(*vy);
+                let mut x = 0;
+                let mut y = 0;
+                loop {
+                    x += dx;
+                    y += dy;
+                    //println!("p: [{},{}], d: [{}, {}], v: [{}, {}]", x, y, dx, dy, vx, vy);
+                    // 移動先の座標
+                    let new_position = Position::new(position.x + x, position.y + y, 0);
+                    // 移動先が盤面内なら動ける
+                    if new_position.is_valid() {
+                        let piece = board[new_position.y as usize][new_position.x as usize];
+                        if piece.is_none() {
+                            // 空きマスなら動ける
+                            move_range.push(LegalMove {
+                                from: position,
+                                to: new_position,
+                            });
+                        } else if piece.unwrap().color != self.color {
+                            // 相手の駒ならそこまで動けるが、それ以上は動けない
+                            move_range.push(LegalMove {
+                                from: position,
+                                to: new_position,
+                            });
+                            break;
+                        } else {
+                            // 自分の駒ならそこまで動けない
+                            break;
+                        }
+                    }
+                    if (dx != 0 && x == *vx) || (dy != 0 && y == *vy) {
+                        break;
                     }
                 }
-                continue;
-            }
-            let dx = calc_delta(vx);
-            let dy = calc_delta(vy);
-            //println!("d: [{}, {}], v: [{}, {}]", dx, dy, vx, vy);
-            let mut x = 0;
-            let mut y = 0;
-            loop {
-                x += dx;
-                y += dy;
-                //println!("p: [{},{}], d: [{}, {}], v: [{}, {}]", x, y, dx, dy, vx, vy);
-                let new_position = Position::new(position.x + x, position.y + y);
-                if new_position.is_valid() {
-                    let piece = board[new_position.y as usize][new_position.x as usize];
-                    // 空きマスなら動ける
-                    if piece.is_none() {
-                        move_range.push(new_position);
-                    } else if piece.unwrap().color != self.color {
-                        move_range.push(new_position);
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-                if (dx != 0 && x == vx) || (dy != 0 && y == vy) {
-                    break;
-                }
-            }
-        }
-        println!(
-            "piece: {}, position: [{}, {}], move_range: {:?}",
-            self, position.x, position.y, move_range
-        );
+                move_range
+            })
+            .collect()
+    }
+
+    pub fn can_capture_king(
+        &self,
+        position: Position,
+        board: &Board,
+        king_position: Position,
+    ) -> bool {
+        let move_range = self.create_move_range(position, board);
         move_range
+            .par_iter()
+            .any(|p| p.to.x == king_position.x && p.to.y == king_position.y)
     }
 }
 
 fn calc_delta(v: i32) -> i32 {
-    if v > 0 {
-        1
-    } else if v < 0 {
-        -1
-    } else {
+    if v == 0 {
         0
+    } else {
+        let div = v / BOARD_SIZE as i32;
+        if div == 0 {
+            v % BOARD_SIZE as i32
+        } else {
+            div
+        }
     }
+}
+
+pub fn concat_vec<T>(v1: Vec<T>, v2: Vec<T>) -> Vec<T> {
+    let mut v = v1;
+    v.extend(v2);
+    v
 }

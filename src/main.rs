@@ -7,14 +7,18 @@ use game::Game;
 
 fn main() -> Result<()> {
     let mut game = Game::new();
-    game.print();
-    //while {
-    game.next()?;
-    game.print();
-    game.next()?;
-    game.print();
+    loop {
+        game.print();
+        let state = game.next();
+        match state {
+            game::GameState::Checkmate(color) => {
+                println!("Checkmate! {:?} is Winner!", color);
+                break;
+            }
+            _ => {}
+        }
+        std::thread::yield_now();
+    }
 
-    //    !game.checkmate()
-    //} {}
     Ok(())
 }
