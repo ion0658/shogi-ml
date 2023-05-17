@@ -5,9 +5,9 @@ use std::fmt;
 #[allow(unused)]
 // 駒の種類を表す列挙型
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[repr(i32)]
+#[repr(i8)]
 pub enum PieceType {
-    King,
+    King = 1,
     Rook,
     Bishop,
     Gold,
@@ -25,9 +25,10 @@ pub enum PieceType {
 
 // プレイヤーを表す列挙型
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(i8)]
 pub enum Color {
-    Black,
-    White,
+    Black = 1,
+    White = -1,
 }
 
 impl Color {
@@ -70,6 +71,10 @@ impl fmt::Display for Piece {
 impl Piece {
     pub fn new(piece_type: PieceType, color: Color) -> Piece {
         Piece { piece_type, color }
+    }
+
+    pub fn get_i8(&self) -> i8 {
+        self.piece_type as i8 * self.color as i8
     }
 
     pub fn can_revolte(&self) -> bool {

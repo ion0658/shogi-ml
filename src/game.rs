@@ -1,33 +1,57 @@
 use crate::{
     board::{
-        create_initial_board, create_move_range, move_piece, print_boards, select_best_board,
-        Board, Boards, Position, BOARD_SIZE,
+        create_initial_board, create_move_range, get_num_array, move_piece, print_boards,
+        select_best_board, Board, Boards, BoardsAsNum, Position, BOARD_SIZE,
     },
     piece::{Color, PieceType},
 };
+use anyhow::Result;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub enum GameState {
     Playing,
     Checkmate(Color),
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct GameResult {
+    winner: i8,
+    records: Vec<BoardsAsNum>,
+}
+
 pub struct Game {
     boards: Boards,
     turn: Color,
-    boards_record: Vec<Boards>,
+    boards_record: Vec<BoardsAsNum>,
+    pool: sqlx::SqlitePool,
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(pool: sqlx::SqlitePool) -> Self {
+        let boards = create_initial_board();
         Game {
-            boards: create_initial_board(),
+            boards,
             turn: Color::Black,
-            boards_record: vec![create_initial_board()],
+            boards_record: vec![get_num_array(&boards)],
+            pool,
         }
     }
+    #[allow(unused)]
     pub fn print(&self) {
         print_boards(&self.boards)
+    }
+
+    pub async fn save(&self) -> Result<()> {
+        let result = GameResult {
+            winner: self.turn.opponent() as i8,
+            records: self.boards_record.clone(),
+        };
+        let query = sqlx::query("INSERT INTO KIFU (WINNER, RECORDS) VALUES (?, ?)")
+            .bind(result.winner)
+            .bind(bincode::serialize(&result.records)?);
+        query.execute(&self.pool).await?;
+        Ok(())
     }
 
     pub fn next(&mut self) -> GameState {
@@ -49,7 +73,7 @@ impl Game {
         }
         let best_boards = select_best_board(&next_boards);
         self.boards = best_boards;
-        self.boards_record.push(best_boards);
+        self.boards_record.push(get_num_array(&best_boards));
         self.turn = self.turn.opponent();
 
         GameState::Playing

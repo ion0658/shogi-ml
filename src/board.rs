@@ -40,6 +40,9 @@ pub type Board = [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE];
 // 持ち駒を含むボード全体を表す3次元配列
 pub type Boards = [Board; PAGE_SIZE];
 
+pub type BoardAsNum = [[i8; BOARD_SIZE]; BOARD_SIZE];
+pub type BoardsAsNum = [BoardAsNum; PAGE_SIZE];
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LegalMove {
     pub from: Position,
@@ -234,7 +237,7 @@ pub fn move_piece(mut boards: Boards, legal_move: LegalMove) -> Boards {
 
 pub fn print_boards(boards: &Boards) {
     let mut board_data = format!(
-        "{:->46}\n|{:>21}\x1b[31m黒\x1b[m{:>21}|\n{:->46}\n",
+        "{:->46}\n|{:>19}\x1b[31m先  手\x1b[m{:>19}|\n{:->46}\n",
         "", "", "", ""
     );
 
@@ -253,7 +256,7 @@ pub fn print_boards(boards: &Boards) {
             board_data.push_str("|\n");
         });
         if z == 0 {
-            board_data.push_str(&format!("{:->46}\n|{:>21}白{:>21}|\n", "", "", "",));
+            board_data.push_str(&format!("{:->46}\n|{:>19}後  手{:>19}|\n", "", "", "",));
             board_data.push_str(&format!(
                 "{:->46}\n|{:>19}持ち駒{:>19}|\n{:->46}\n",
                 "", "", "", ""
@@ -282,4 +285,18 @@ pub fn is_nifu(board: &Board, m: LegalMove, color: Color) -> bool {
         }
     }
     false
+}
+
+pub fn get_num_array(boards: &Boards) -> BoardsAsNum {
+    let mut b: BoardsAsNum = [[[0; BOARD_SIZE]; BOARD_SIZE]; PAGE_SIZE];
+    boards.iter().enumerate().for_each(|(z, board)| {
+        board.iter().enumerate().for_each(|(y, row)| {
+            row.iter().enumerate().for_each(|(x, p)| {
+                if let Some(piece) = p {
+                    b[z][y][x] = piece.get_i8();
+                }
+            });
+        });
+    });
+    b
 }
