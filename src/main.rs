@@ -30,9 +30,10 @@ async fn game_task(pool: sqlx::SqlitePool) -> Result<()> {
                 // game.print();
                 break;
             }
-            _ => {}
+            _ => {
+                tokio::task::yield_now().await;
+            }
         }
-        tokio::task::yield_now().await;
     }
     game.save().await?;
     Ok(())
@@ -50,8 +51,7 @@ async fn get_connection() -> Result<sqlx::sqlite::SqlitePool> {
     }
 
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
-        .max_connections(5)
-        .connect(db_url)
-        .await?;
+        .max_connections(100)
+        .connect_lazy(db_url)?;
     Ok(pool)
 }

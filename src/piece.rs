@@ -195,7 +195,7 @@ impl Piece {
                             let m = LegalMove {
                                 from: position,
                                 to: Position::new(x as i32, y as i32, 0),
-                                revolte: false,
+                                revolute: false,
                             };
                             if self.piece_type == PieceType::Pawn && is_nifu(board, m, self.color) {
                                 None
@@ -223,7 +223,6 @@ impl Piece {
                 loop {
                     x += dx;
                     y += dy;
-                    //println!("p: [{},{}], d: [{}, {}], v: [{}, {}]", x, y, dx, dy, vx, vy);
                     // 移動先の座標
                     let new_position = Position::new(position.x + x, position.y + y, 0);
                     // 移動先が盤面内なら動ける
@@ -234,14 +233,14 @@ impl Piece {
                             let m = LegalMove {
                                 from: position,
                                 to: new_position,
-                                revolte: false,
+                                revolute: false,
                             };
                             move_range.push(m);
                             if m.can_revolte(self.color) && self.can_revolte() {
                                 let rm = LegalMove {
                                     from: position,
                                     to: new_position,
-                                    revolte: true,
+                                    revolute: true,
                                 };
                                 move_range.push(rm);
                             }
@@ -250,14 +249,14 @@ impl Piece {
                             let m = LegalMove {
                                 from: position,
                                 to: new_position,
-                                revolte: false,
+                                revolute: false,
                             };
                             move_range.push(m);
                             if m.can_revolte(self.color) && self.can_revolte() {
                                 let rm = LegalMove {
                                     from: position,
                                     to: new_position,
-                                    revolte: true,
+                                    revolute: true,
                                 };
                                 move_range.push(rm);
                             }
@@ -307,15 +306,3 @@ pub fn concat_vec<T>(v1: Vec<T>, v2: Vec<T>) -> Vec<T> {
     v.extend(v2);
     v
 }
-//
-// if self.piece_type == PieceType::Pawn {
-//     Some(LegalMove {
-//         from: position,
-//         to: Position::new(x as i32, y as i32, 0),
-//     })
-// } else {
-//     Some(LegalMove {
-//         from: position,
-//         to: Position::new(x as i32, y as i32, 0),
-//     })
-// }

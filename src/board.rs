@@ -30,8 +30,7 @@ impl Position {
             && self.x < BOARD_SIZE as i32
             && self.y >= 0
             && self.y < BOARD_SIZE as i32
-            && self.z >= 0
-            && self.z < PAGE_SIZE as i32
+            && self.z == 0
     }
 }
 
@@ -47,7 +46,7 @@ pub type BoardsAsNum = [BoardAsNum; PAGE_SIZE];
 pub struct LegalMove {
     pub from: Position,
     pub to: Position,
-    pub revolte: bool,
+    pub revolute: bool,
 }
 
 impl LegalMove {
@@ -195,7 +194,7 @@ pub fn move_piece(mut boards: Boards, legal_move: LegalMove) -> Boards {
     // 駒を移動する
     // 成る場合は成る
 
-    boards[0][legal_move.to.y as usize][legal_move.to.x as usize] = if legal_move.revolte {
+    boards[0][legal_move.to.y as usize][legal_move.to.x as usize] = if legal_move.revolute {
         boards[legal_move.from.z as usize][legal_move.from.y as usize][legal_move.from.x as usize]
             .unwrap()
             .revolute()
