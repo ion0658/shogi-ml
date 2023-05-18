@@ -73,8 +73,11 @@ impl Piece {
         Piece { piece_type, color }
     }
 
-    pub fn get_i8(&self) -> i8 {
-        self.piece_type as i8 * self.color as i8
+    pub fn get_u8(&self) -> u8 {
+        match self.color {
+            Color::Black => self.piece_type as u8,
+            Color::White => u8::MAX - self.piece_type as u8,
+        }
     }
 
     pub fn can_revolte(&self) -> bool {

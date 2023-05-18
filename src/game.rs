@@ -33,7 +33,7 @@ impl Game {
         Game {
             boards,
             turn: Color::Black,
-            boards_record: vec![get_num_array(&boards)],
+            boards_record: vec![],
             pool,
         }
     }
@@ -47,9 +47,10 @@ impl Game {
             winner: self.turn.opponent() as i8,
             records: self.boards_record.clone(),
         };
+        let record = result.records.as_slice().concat().concat().concat();
         let query = sqlx::query("INSERT INTO KIFU (WINNER, RECORDS) VALUES (?, ?)")
             .bind(result.winner)
-            .bind(bincode::serialize(&result.records)?);
+            .bind(&record);
         query.execute(&self.pool).await?;
         Ok(())
     }
@@ -75,7 +76,7 @@ impl Game {
         self.boards = best_boards;
         self.boards_record.push(get_num_array(&best_boards));
         self.turn = self.turn.opponent();
-
+        std::thread::yield_now();
         GameState::Playing
     }
 

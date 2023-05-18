@@ -39,7 +39,7 @@ pub type Board = [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE];
 // 持ち駒を含むボード全体を表す3次元配列
 pub type Boards = [Board; PAGE_SIZE];
 
-pub type BoardAsNum = [[i8; BOARD_SIZE]; BOARD_SIZE];
+pub type BoardAsNum = [[u8; BOARD_SIZE]; BOARD_SIZE];
 pub type BoardsAsNum = [BoardAsNum; PAGE_SIZE];
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -292,7 +292,7 @@ pub fn get_num_array(boards: &Boards) -> BoardsAsNum {
         board.iter().enumerate().for_each(|(y, row)| {
             row.iter().enumerate().for_each(|(x, p)| {
                 if let Some(piece) = p {
-                    b[z][y][x] = piece.get_i8();
+                    b[z][y][x] = piece.get_u8();
                 }
             });
         });

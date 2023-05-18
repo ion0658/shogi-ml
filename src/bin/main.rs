@@ -48,7 +48,6 @@ async fn game_task(pool: sqlx::SqlitePool) -> Result<u128> {
             }
             _ => {
                 count += 1;
-                std::thread::yield_now();
             }
         }
     }

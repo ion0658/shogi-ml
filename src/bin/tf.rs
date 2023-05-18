@@ -188,7 +188,7 @@ fn train<P: AsRef<Path>>(save_dir: P) -> Result<(), Box<dyn Error>> {
     // ===================
     for i in 0..4 {
         let error = train(i)?;
-        println!("Error: {}", error);
+        println!("2 Error: {}", error);
         if error > 0.1 {
             return Err(Box::new(Status::new_set(
                 Code::Internal,
@@ -225,7 +225,7 @@ fn eval<P: AsRef<Path>>(save_dir: P) -> Result<(), Box<dyn Error>> {
         session.run(&mut run_args)?;
         let output = run_args.fetch::<f32>(output_fetch)?[0];
         let error = (output - expected) * (output - expected);
-        println!("Error: {}", error);
+        println!("1 Error: {}", error);
         if error > 0.1 {
             return Err(Box::new(Status::new_set(
                 Code::Internal,
