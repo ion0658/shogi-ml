@@ -59,6 +59,7 @@ async fn game_task(pool: sqlx::SqlitePool) -> Result<u128> {
         elapsed.as_micros() / count
     );
     game.save().await?;
+
     Ok(elapsed.as_micros() / count)
 }
 

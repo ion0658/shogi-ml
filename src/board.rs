@@ -40,7 +40,7 @@ pub type Board = [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE];
 pub type Boards = [Board; PAGE_SIZE];
 
 pub type BoardAsNum = [[u8; BOARD_SIZE]; BOARD_SIZE];
-pub type BoardsAsNum = [BoardAsNum; PAGE_SIZE];
+pub type BoardsAsNum = [BoardAsNum; PAGE_SIZE * 2];
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LegalMove {
@@ -287,12 +287,17 @@ pub fn is_nifu(board: &Board, m: LegalMove, color: Color) -> bool {
 }
 
 pub fn get_num_array(boards: &Boards) -> BoardsAsNum {
-    let mut b: BoardsAsNum = [[[0; BOARD_SIZE]; BOARD_SIZE]; PAGE_SIZE];
+    let mut b: BoardsAsNum = [[[0; BOARD_SIZE]; BOARD_SIZE]; PAGE_SIZE * 2];
     boards.iter().enumerate().for_each(|(z, board)| {
         board.iter().enumerate().for_each(|(y, row)| {
             row.iter().enumerate().for_each(|(x, p)| {
                 if let Some(piece) = p {
-                    b[z][y][x] = piece.get_u8();
+                    match (piece.color, z) {
+                        (Color::Black, 0) => b[0][y][x] = piece.get_u8(),
+                        (Color::White, 0) => b[1][y][x] = piece.get_u8(),
+                        (Color::Black, _) => b[1][y][x] = piece.get_u8(),
+                        (Color::White, _) => b[2][y][x] = piece.get_u8(),
+                    }
                 }
             });
         });

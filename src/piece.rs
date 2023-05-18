@@ -27,8 +27,8 @@ pub enum PieceType {
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(i8)]
 pub enum Color {
-    Black = 1,
-    White = -1,
+    Black = 0,
+    White,
 }
 
 impl Color {
@@ -74,10 +74,11 @@ impl Piece {
     }
 
     pub fn get_u8(&self) -> u8 {
-        match self.color {
-            Color::Black => self.piece_type as u8,
-            Color::White => u8::MAX - self.piece_type as u8,
-        }
+        self.piece_type as u8
+        // match self.color {
+        //     Color::Black => self.piece_type as u8,
+        //     Color::White => u8::MAX- self.piece_type as u8,
+        // }
     }
 
     pub fn can_revolte(&self) -> bool {
