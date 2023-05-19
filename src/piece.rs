@@ -90,7 +90,6 @@ impl Piece {
             | PieceType::Pawn
             | PieceType::Bishop
             | PieceType::Rook => true,
-
             _ => false,
         }
     }
