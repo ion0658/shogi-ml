@@ -8,12 +8,14 @@ import shutil
 
 BOARD_SIZE = 9
 BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 4
-EPOCHS = 25
 
 gen = 0
 if len(sys.argv) > 1:
     gen = int(sys.argv[1])
 file_name = "model/gen_{}".format(gen)
+epochs = 5
+if len(sys.argv) > 2:
+    epochs = int(sys.argv[2])
 
 def load_game_data():
     dbname = "db/data.db"
@@ -47,8 +49,8 @@ def show_graph(history):
 
     # epochごとのlossを表示
     plt.subplot(1, 2, 1)
-    plt.plot(range(1, EPOCHS + 1), history.history['loss'], '-o')
-    plt.plot(range(1, EPOCHS + 1), history.history['val_loss'], '-o')
+    plt.plot(range(1, epochs + 1), history.history['loss'], '-o')
+    plt.plot(range(1, epochs + 1), history.history['val_loss'], '-o')
     plt.title('loss_transition')
     plt.ylabel('loss')
     plt.xlabel('epoch')
@@ -57,8 +59,8 @@ def show_graph(history):
 
     # epochごとのaccuracyを表示
     plt.subplot(1, 2, 2)
-    plt.plot(range(1, EPOCHS+1), history.history['accuracy'], '-o')
-    plt.plot(range(1, EPOCHS+1), history.history['val_accuracy'], '-o')
+    plt.plot(range(1, epochs+1), history.history['accuracy'], '-o')
+    plt.plot(range(1, epochs+1), history.history['val_accuracy'], '-o')
     plt.title('accuracy_transition')
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
@@ -86,7 +88,7 @@ def train():
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     # 学習開始
-    history = model.fit(x, y, epochs=EPOCHS, validation_split=0.2)
+    history = model.fit(x, y, epochs=epochs, validation_split=0.2)
     model.save(file_name)
     #show_graph(history)
     
