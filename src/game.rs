@@ -19,20 +19,18 @@ pub enum GameState {
 pub struct Game {
     boards: Boards,
     turn: Color,
-    inf_b: Arc<Inference>,
-    inf_w: Arc<Inference>,
+    inference: Arc<Inference>,
     boards_record: Vec<Boards>,
     pool: sqlx::SqlitePool,
 }
 
 impl Game {
-    pub fn new(pool: sqlx::SqlitePool, inf_b: Arc<Inference>, inf_w: Arc<Inference>) -> Self {
+    pub fn new(pool: sqlx::SqlitePool, inference: Arc<Inference>) -> Self {
         let boards = create_initial_board();
         Game {
             boards,
             turn: Color::Black,
-            inf_b,
-            inf_w,
+            inference,
             boards_record: vec![],
             pool,
         }
@@ -74,11 +72,7 @@ impl Game {
         if next_boards.len() == 0 {
             return Ok(GameState::Checkmate(self.turn.opponent()));
         }
-
-        let best_boards = match self.turn {
-            Color::Black => self.inf_b.select_best_board(&next_boards, self.turn)?,
-            Color::White => self.inf_w.select_best_board(&next_boards, self.turn)?,
-        };
+        let best_boards = self.inference.select_best_board(&next_boards, self.turn)?;
         self.boards = best_boards;
         self.boards_record.push(best_boards);
         self.turn = self.turn.opponent();

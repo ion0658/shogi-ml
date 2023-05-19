@@ -16,13 +16,9 @@ pub struct Inference {
 }
 
 impl Inference {
-    pub fn init(generation: i32, color: Color) -> Result<Self> {
+    pub fn init(generation: i32) -> Result<Self> {
         let i = if generation > 0 {
-            let color_str = match color {
-                Color::Black => "b",
-                Color::White => "w",
-            };
-            let file_name = format!("model/gen_{}{}", generation - 1, color_str);
+            let file_name = format!("model/gen_{}", generation - 1);
             let (session, input_node, output_node) = Self::init_session(file_name)?;
             Self {
                 session: Some(session),
@@ -115,11 +111,8 @@ impl Inference {
 
         // 出力Tensorの取得
         let output_tensor = args.fetch::<f32>(output_token)?;
-        let mut chunks = output_tensor.chunks(2).collect::<Vec<_>>();
-        chunks.sort_by(|a, b| a[turn as usize].partial_cmp(&b[turn as usize]).unwrap());
-        //println!("turn: {:?}\n{:?}", turn, chunks);
-        let (max_winrate_index, _) = chunks
-            .par_iter()
+        let (max_winrate_index, _) = output_tensor
+            .chunks(2)
             .map(|chunk| [chunk[0], chunk[1]])
             .enumerate()
             .max_by(|(_, a), (_, b)| a[turn as usize].partial_cmp(&b[turn as usize]).unwrap())
