@@ -4,15 +4,16 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import os
 import sys
+import shutil
 
 BOARD_SIZE = 9
 BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 4
-EPOCHS = 25
+EPOCHS = 5
 
 gen = 0
 if len(sys.argv) > 1:
     gen = int(sys.argv[1])
-file_name = "model/model_{}.h5".format(gen)
+file_name = "model/gen_{}".format(gen)
 
 def load_game_data():
     dbname = "db/data.db"
@@ -29,7 +30,7 @@ def load_game_data():
     for row in game_data:
         (winner, binary) = row
         array_1d  = np.frombuffer(binary, dtype=np.uint8)
-        record = array_1d.reshape([int(len(array_1d)/BOARD_SQ_SIZE), 4, 9, 9])
+        record = array_1d.reshape([int(len(array_1d)/BOARD_SQ_SIZE), 4, BOARD_SIZE, BOARD_SIZE])
         data_count += int(len(array_1d)/BOARD_SQ_SIZE)
         for board in record:
             x.append(board)
@@ -70,40 +71,32 @@ def show_graph(history):
 def train():
     x, y = load_game_data()
 
-    # 空のモデルを生成
-    model = tf.keras.Sequential()
-    # 入力データのサイズを設定、3はRGBの3色(PNGなら透過情報が付与されるので4?)
-    model.add(tf.keras.Input(shape=(4, BOARD_SIZE, BOARD_SIZE)))
-    # 平坦化層:入力データをチャンネルに関係なく全て1次元配列に変換
-    model.add(tf.keras.layers.Flatten())
-    # 全結合層:ユニット(パーセプトロン)数や活性化関数を設定
-    model.add(tf.keras.layers.Dense(256, input_dim=10, activation="relu"))
-    # ドロップアウト層: 過学習を防止する
-    model.add(tf.keras.layers.Dropout(rate=0.2))
-    # 出力のラベル数をセット(今回の構成では学習データを格納したフォルダ数になる)
-    model.add(tf.keras.layers.Dense(2, activation="softmax"))
-    # モデルの情報を出力
+    # 4. ニューラルネットワークモデルの定義
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(4, BOARD_SIZE, BOARD_SIZE), name="board_in"),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(256, activation='relu'),
+        tf.keras.layers.Dropout(rate=0.2),
+        tf.keras.layers.Dense(2, activation='softmax', name="winner_out")
+    ])
     model.summary()
 
+
     # モデルを構築
-    model.compile(optimizer='adam',
-                loss='sparse_categorical_crossentropy',
-                metrics=['accuracy'])
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     # 学習開始
     history = model.fit(x, y, epochs=EPOCHS, validation_split=0.2)
     model.save(file_name)
-    show_graph(history)
-    
-
+    #show_graph(history)
     
 
 def check_dir():
     if not os.path.exists("model"):
         os.mkdir("model")
     if os.path.exists(file_name):
-        os.remove(file_name)
-        
+        shutil.rmtree(file_name)
+
 check_dir()
 train()
 
