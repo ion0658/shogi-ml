@@ -76,7 +76,7 @@ def train():
         tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(4, BOARD_SIZE, BOARD_SIZE), name="board_in"),
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dense(256, activation='relu'),
-        tf.keras.layers.Dropout(rate=0.2),
+        #tf.keras.layers.Dropout(rate=0.2),
         tf.keras.layers.Dense(2, activation='softmax', name="winner_out")
     ])
     model.summary()
