@@ -1,7 +1,6 @@
 use anyhow::Result;
-use shogi_alg::{game::*, inference::Inference, piece::Color};
-use sqlx::{migrate::MigrateDatabase, Sqlite};
-use std::{env, io::Write, path::Path, sync::Arc};
+use shogi_alg::{db::get_connection, game::*, inference::Inference, piece::Color};
+use std::{env, io::Write, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -85,23 +84,6 @@ async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>)
 
     game.save(generation).await?;
     Ok(())
-}
-
-async fn get_connection() -> Result<sqlx::sqlite::SqlitePool> {
-    let db_url = "sqlite:db/data.db";
-
-    if !Path::new("./db").exists() {
-        std::fs::create_dir("./db")?;
-    }
-    if !sqlx::Sqlite::database_exists(db_url).await? {
-        println!("Creating database {}", db_url);
-        Sqlite::create_database(db_url).await?;
-    }
-
-    let pool = sqlx::sqlite::SqlitePoolOptions::new()
-        .max_connections(100)
-        .connect_lazy(db_url)?;
-    Ok(pool)
 }
 
 fn get_input() -> u64 {

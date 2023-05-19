@@ -1,5 +1,5 @@
 use crate::{
-    board::{get_num_array, is_checkmate, Boards, BOARD_SIZE},
+    board::{is_checkmate, Boards, BOARD_SIZE, PAGE_SIZE},
     piece::{Color, PieceType},
 };
 use anyhow::Result;
@@ -86,23 +86,11 @@ impl Inference {
             .iter()
             .map(|board| get_num_array(board))
             .collect::<Vec<_>>();
+        let data = boards.concat().concat().concat();
         // 入力Tensorの作成
-        let mut input_tensor: tensorflow::Tensor<f32> =
-            Tensor::new(&[boards.len() as u64, 4, BOARD_SIZE as u64, BOARD_SIZE as u64]);
-
-        boards.iter().enumerate().for_each(|(i, &hands)| {
-            hands.iter().enumerate().for_each(|(z, &board)| {
-                board.iter().enumerate().for_each(|(y, &row)| {
-                    row.iter().enumerate().for_each(|(x, &piece)| {
-                        let index = x
-                            + y * BOARD_SIZE
-                            + z * BOARD_SIZE * BOARD_SIZE
-                            + i * BOARD_SIZE * BOARD_SIZE * 4;
-                        input_tensor[index] = piece as f32 / PieceType::get_max() as f32;
-                    });
-                });
-            });
-        });
+        let input_tensor: tensorflow::Tensor<f32> =
+            Tensor::new(&[boards.len() as u64, 4, BOARD_SIZE as u64, BOARD_SIZE as u64])
+                .with_values(&data)?;
 
         // 推論の実行
         let mut args = SessionRunArgs::new();
@@ -117,8 +105,37 @@ impl Inference {
             .map(|chunk| [chunk[0], chunk[1]])
             .enumerate()
             .max_by(|(_, a), (_, b)| a[turn as usize].partial_cmp(&b[turn as usize]).unwrap())
-            .unwrap();
+            .unwrap_or_default();
 
         Ok(max_winrate_index)
     }
+}
+
+type BoardAsNum = [[f32; BOARD_SIZE]; BOARD_SIZE];
+type BoardsAsNum = [BoardAsNum; PAGE_SIZE * 2];
+fn get_num_array(boards: &Boards) -> BoardsAsNum {
+    let mut b: BoardsAsNum = [[[0.0; BOARD_SIZE]; BOARD_SIZE]; PAGE_SIZE * 2];
+    boards.iter().enumerate().for_each(|(z, board)| {
+        board.iter().enumerate().for_each(|(y, row)| {
+            row.iter().enumerate().for_each(|(x, p)| {
+                if let Some(piece) = p {
+                    match (piece.color, z) {
+                        (Color::Black, 0) => {
+                            b[0][y][x] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                        }
+                        (Color::White, 0) => {
+                            b[1][y][x] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                        }
+                        (Color::Black, _) => {
+                            b[1][y][x] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                        }
+                        (Color::White, _) => {
+                            b[2][y][x] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                        }
+                    }
+                }
+            });
+        });
+    });
+    b
 }

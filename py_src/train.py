@@ -28,16 +28,22 @@ def load_game_data():
     conn.close()
     x = []
     y = []
+    black_win_count = 0
+    game_count = 0
     data_count = 0
     for row in game_data:
         (winner, binary) = row
         array_1d  = np.frombuffer(binary, dtype=np.uint8)
         record = array_1d.reshape([int(len(array_1d)/BOARD_SQ_SIZE), 4, BOARD_SIZE, BOARD_SIZE])
         data_count += int(len(array_1d)/BOARD_SQ_SIZE)
+        if winner == 0:
+            black_win_count += 1
+        game_count += 1
         for board in record:
             x.append(board)
             y.append(winner)
     print("data count: ", data_count)
+    print("black winrate: {}%".format(black_win_count / game_count * 100))
     X = np.array(x)
     X = X / X.max()
     Y = np.array(y)
