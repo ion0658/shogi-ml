@@ -68,7 +68,7 @@ def show_graph(history):
     # グラフ表示
     plt.show()
 
-def train(color:str):
+def train():
     x, y = load_game_data()
 
     # 4. ニューラルネットワークモデルの定義
@@ -87,19 +87,16 @@ def train(color:str):
 
     # 学習開始
     history = model.fit(x, y, epochs=EPOCHS, validation_split=0.2)
-    model.save(file_name + color)
+    model.save(file_name)
     #show_graph(history)
     
 
 def check_dir():
     if not os.path.exists("model"):
         os.mkdir("model")
-    if os.path.exists(file_name + "w"):
-        shutil.rmtree(file_name + "w")
-    if os.path.exists(file_name + "b"):
-        shutil.rmtree(file_name + "b")
+    if os.path.exists(file_name):
+        shutil.rmtree(file_name)
 
 check_dir()
-train("b")
-train("w")
+train()
 

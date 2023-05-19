@@ -60,18 +60,20 @@ impl Inference {
         if let Some(&boards) = checkmate_boards.first() {
             return Ok(boards.clone());
         }
+        let mut rng = rand::thread_rng();
+
         if let (Some(session), Some(input_node), Some(output_node)) =
             (&self.session, &self.input_node, &self.output_node)
         {
-            let index = Self::inference(turn, boards, session, input_node, output_node)?;
-
-            Ok(boards[index].clone())
-        } else {
-            let mut rng = rand::thread_rng();
-            let len = boards.len();
-            let index = rng.gen_range(0..len);
-            Ok(boards[index].clone())
+            let use_ml = rng.gen_ratio(7, 10);
+            if use_ml {
+                let index = Self::inference(turn, boards, session, input_node, output_node)?;
+                return Ok(boards[index].clone());
+            }
         }
+        let len = boards.len();
+        let index = rng.gen_range(0..len);
+        Ok(boards[index].clone())
     }
 
     fn inference(
