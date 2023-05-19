@@ -23,6 +23,11 @@ pub enum PieceType {
     PromotedPawn,
 }
 
+impl PieceType {
+    pub fn get_max() -> u8 {
+        Self::PromotedPawn as u8
+    }
+}
 // プレイヤーを表す列挙型
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(i8)]

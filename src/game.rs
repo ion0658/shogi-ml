@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use crate::{
     board::{
         create_initial_board, create_move_range, get_num_array, is_checked, move_piece,
-        print_boards, select_best_board, Boards,
+        print_boards, Boards,
     },
+    inference::Inference,
     piece::Color,
 };
 use anyhow::Result;
@@ -16,16 +19,18 @@ pub enum GameState {
 pub struct Game {
     boards: Boards,
     turn: Color,
+    inference: Arc<Inference>,
     boards_record: Vec<Boards>,
     pool: sqlx::SqlitePool,
 }
 
 impl Game {
-    pub fn new(pool: sqlx::SqlitePool) -> Self {
+    pub fn new(pool: sqlx::SqlitePool, inference: Arc<Inference>) -> Self {
         let boards = create_initial_board();
         Game {
             boards,
             turn: Color::Black,
+            inference,
             boards_record: vec![],
             pool,
         }
@@ -50,7 +55,7 @@ impl Game {
         Ok(())
     }
 
-    pub fn next(&mut self) -> GameState {
+    pub fn next(&mut self) -> Result<GameState> {
         let move_range = create_move_range(&self.boards, self.turn);
         let next_boards = move_range
             .par_iter()
@@ -65,13 +70,13 @@ impl Game {
             })
             .collect::<Vec<_>>();
         if next_boards.len() == 0 {
-            return GameState::Checkmate(self.turn.opponent());
+            return Ok(GameState::Checkmate(self.turn.opponent()));
         }
-        let best_boards = select_best_board(&next_boards, self.turn);
+        let best_boards = self.inference.select_best_board(&next_boards, self.turn)?;
         self.boards = best_boards;
         self.boards_record.push(best_boards);
         self.turn = self.turn.opponent();
         std::thread::yield_now();
-        GameState::Playing
+        Ok(GameState::Playing)
     }
 }

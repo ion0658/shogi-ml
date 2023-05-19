@@ -1,7 +1,7 @@
 use anyhow::Result;
-use shogi_alg::game::*;
+use shogi_alg::{game::*, inference::Inference};
 use sqlx::{migrate::MigrateDatabase, Sqlite};
-use std::{env, path::Path};
+use std::{env, path::Path, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -16,16 +16,22 @@ async fn main() -> Result<()> {
     } else {
         0
     };
+
     run(game_number, generation).await?;
     Ok(())
 }
 
 async fn run(game_number: usize, generation: i32) -> Result<()> {
+    let inference = Arc::new(Inference::init(generation)?);
     let pool = get_connection().await?;
     sqlx::migrate!().run(&pool).await?;
     let mut tasks = vec![];
     for _ in 0..game_number {
-        tasks.push(tokio::spawn(game_task(pool.clone(), generation)));
+        tasks.push(tokio::spawn(game_task(
+            pool.clone(),
+            generation,
+            inference.clone(),
+        )));
     }
     let elapsed_list = futures::future::try_join_all(tasks)
         .await?
@@ -40,14 +46,14 @@ async fn run(game_number: usize, generation: i32) -> Result<()> {
     Ok(())
 }
 
-async fn game_task(pool: sqlx::SqlitePool, generation: i32) -> Result<u128> {
-    let mut game = Game::new(pool);
+async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>) -> Result<u128> {
+    let mut game = Game::new(pool, inf);
     let mut count = 0;
     let start = std::time::Instant::now();
     loop {
-        match game.next() {
-            GameState::Checkmate(_color) => {
-                // println!("Checkmate! {:?} is Winner!", color);
+        match game.next()? {
+            GameState::Checkmate(color) => {
+                println!("Checkmate! {:?} is Winner!", color);
                 // game.print();
                 break;
             }
