@@ -3,8 +3,6 @@ use shogi_alg::{game::*, inference::Inference};
 use sqlx::{migrate::MigrateDatabase, Sqlite};
 use std::{env, path::Path, sync::Arc};
 
-const PARALLEL: usize = 4;
-
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -18,9 +16,15 @@ async fn main() -> Result<()> {
     } else {
         0
     };
-    let game_number = game_number / PARALLEL;
+    let para = if args.len() > 3 {
+        args[3].parse::<usize>().unwrap_or(1)
+    } else {
+        num_cpus::get()
+    };
+
+    let game_number = game_number / para;
     let mut tasks = vec![];
-    for _ in 0..PARALLEL {
+    for _ in 0..para {
         tasks.push(tokio::spawn(train_task(game_number, generation)));
     }
     futures::future::try_join_all(tasks).await?;
@@ -51,7 +55,6 @@ async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>)
             }
             _ => {
                 count += 1;
-                tokio::task::yield_now().await;
             }
         }
     }
