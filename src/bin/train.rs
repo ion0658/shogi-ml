@@ -17,7 +17,11 @@ async fn main() -> Result<()> {
         0
     };
     let para = if args.len() > 3 {
-        args[3].parse::<usize>().unwrap_or(1)
+        let para = args[3].parse::<usize>().unwrap_or(1);
+        match para {
+            0 => 1,
+            _ => para,
+        }
     } else {
         num_cpus::get()
     };
