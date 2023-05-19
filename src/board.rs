@@ -1,5 +1,4 @@
 use crate::piece::{concat_vec, Color, Piece, PieceType};
-use rand::prelude::*;
 use rayon::prelude::*;
 use std::fmt;
 
@@ -265,22 +264,6 @@ pub fn print_boards(boards: &Boards) {
         }
     });
     println!("{}", board_data);
-}
-
-pub fn select_best_board(boards: &[Boards], turn: Color) -> Boards {
-    let checkmate_boards = boards
-        .par_iter()
-        .filter(|boards| is_checkmate(boards, turn.opponent()))
-        .collect::<Vec<_>>();
-
-    if let Some(&boards) = checkmate_boards.first() {
-        boards.clone()
-    } else {
-        let mut rng = rand::thread_rng();
-        let len = boards.len();
-        let index = rng.gen_range(0..len);
-        boards[index].clone()
-    }
 }
 
 // 二歩判定

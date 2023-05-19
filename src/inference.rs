@@ -111,7 +111,9 @@ impl Inference {
 
         // 出力Tensorの取得
         let output_tensor = args.fetch::<f32>(output_token)?;
-        let chunks = output_tensor.chunks(2).collect::<Vec<_>>();
+        let mut chunks = output_tensor.chunks(2).collect::<Vec<_>>();
+        chunks.sort_by(|a, b| a[turn as usize].partial_cmp(&b[turn as usize]).unwrap());
+        //println!("turn: {:?}\n{:?}", turn, chunks);
         let (max_winrate_index, _) = chunks
             .par_iter()
             .map(|chunk| [chunk[0], chunk[1]])
