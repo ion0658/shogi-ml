@@ -65,7 +65,7 @@ impl Inference {
         if let (Some(session), Some(input_node), Some(output_node)) =
             (&self.session, &self.input_node, &self.output_node)
         {
-            if mode && rng.gen_ratio(1, 2) {
+            if !mode || rng.gen_ratio(1, 2) {
                 let index = Self::inference(turn, boards, session, input_node, output_node)?;
                 return Ok(boards[index].clone());
             }

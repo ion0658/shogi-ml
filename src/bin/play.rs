@@ -1,78 +1,90 @@
 use anyhow::Result;
-use shogi_alg::{game::*, inference::Inference};
+use shogi_alg::{game::*, inference::Inference, piece::Color};
 use sqlx::{migrate::MigrateDatabase, Sqlite};
-use std::{env, path::Path, sync::Arc};
+use std::{env, io::Write, path::Path, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    let game_number = if args.len() > 1 {
-        args[1].parse::<usize>().unwrap_or(1)
-    } else {
-        1
-    };
-    let generation = if args.len() > 2 {
-        args[2].parse::<i32>().unwrap_or_default()
+    let generation = if args.len() > 1 {
+        args[1].parse::<i32>().unwrap_or_default()
     } else {
         0
     };
 
-    run(game_number, generation).await?;
+    run(generation).await?;
     Ok(())
 }
 
-async fn run(game_number: usize, generation: i32) -> Result<()> {
+async fn run(generation: i32) -> Result<()> {
     let inference = Arc::new(Inference::init(generation)?);
     let pool = get_connection().await?;
     sqlx::migrate!().run(&pool).await?;
-    let mut tasks = vec![];
-    for _ in 0..game_number {
-        tasks.push(tokio::spawn(game_task(
-            pool.clone(),
-            generation,
-            inference.clone(),
-        )));
-    }
-    let elapsed_list = futures::future::try_join_all(tasks)
-        .await?
-        .iter()
-        .filter_map(|e| match e {
-            Ok(elapsed) => Some(*elapsed),
-            Err(_) => None,
-        })
-        .collect::<Vec<_>>();
-    let avg = elapsed_list.iter().sum::<u128>() / elapsed_list.len() as u128;
-    println!("Average time: {} (micro sec)/move", avg);
+
+    let _ = game_task(pool, generation, inference).await?;
+
     Ok(())
 }
 
-async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>) -> Result<u128> {
-    let mut game = Game::new(true, pool, inf);
-    let mut count = 0;
-    let start = std::time::Instant::now();
+async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>) -> Result<()> {
+    println!("Start Game");
+    print!("Select Color (Black: 0, White: _): ");
+    std::io::stdout().flush()?;
+    let player_color = match get_input() {
+        0 => Color::Black,
+        _ => Color::White,
+    };
+
+    let mut game = Game::new(false, pool, inf);
     loop {
-        match game.next()? {
-            GameState::Checkmate(color) => {
-                println!("Checkmate! {:?} is Winner!", color);
-                // game.print();
+        if player_color == game.current_turn() {
+            let moves = game.get_legal_moves();
+            if let Ok(moves) = moves {
+                println!("Your Turn");
+                println!("Current Board");
+                game.print();
+
+                moves.iter().enumerate().for_each(|(i, m)| {
+                    if m.1.from.z == 0 {
+                        println!(
+                            "[{}]: {} => to [{}, {}] with rev = {}",
+                            i, m.0, m.1.to.x, m.1.to.y, m.1.revolute
+                        )
+                    } else {
+                        println!("[{}]: {} => to [{}, {}] 打", i, m.0, m.1.to.x, m.1.to.y)
+                    }
+                });
+
+                let index = loop {
+                    print!("Select Move: ");
+                    std::io::stdout().flush()?;
+                    let selected_num = get_input();
+                    if selected_num >= moves.len() as u64 {
+                        println!("Allow Range = 0..{}", moves.len() - 1);
+                        continue;
+                    }
+                    break selected_num;
+                };
+                game.play_next(&moves[index as usize].1);
+            } else {
+                println!("You Lose!");
+                game.print();
                 break;
             }
-            _ => {
-                count += 1;
-                //game.print();
+        } else {
+            match game.next()? {
+                GameState::Checkmate(_) => {
+                    println!("You Win");
+                    game.print();
+                    break;
+                }
+                _ => {}
             }
         }
     }
-    let elapsed = start.elapsed();
-    println!(
-        "Game finished in {:?} with {} moves {} [(micro sec)/move]",
-        elapsed,
-        count,
-        elapsed.as_micros() / count
-    );
-    game.save(generation).await?;
 
-    Ok(elapsed.as_micros() / count)
+    game.save(generation).await?;
+    Ok(())
 }
 
 async fn get_connection() -> Result<sqlx::sqlite::SqlitePool> {
@@ -90,4 +102,21 @@ async fn get_connection() -> Result<sqlx::sqlite::SqlitePool> {
         .max_connections(100)
         .connect_lazy(db_url)?;
     Ok(pool)
+}
+
+fn get_input() -> u64 {
+    loop {
+        let mut buff = String::new();
+        std::io::stdin()
+            .read_line(&mut buff)
+            .expect("std read line error");
+        let input = buff.trim().parse::<u64>();
+        match input {
+            Ok(i) => break i,
+            Err(_) => {
+                println!("Please Input Number");
+                continue;
+            }
+        }
+    }
 }

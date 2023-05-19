@@ -103,6 +103,8 @@ impl Piece {
             PieceType::Knight => Piece::new(PieceType::PromotedKnight, self.color),
             PieceType::Lance => Piece::new(PieceType::PromotedLance, self.color),
             PieceType::Pawn => Piece::new(PieceType::PromotedPawn, self.color),
+            PieceType::Bishop => Piece::new(PieceType::Horse, self.color),
+            PieceType::Rook => Piece::new(PieceType::Dragon, self.color),
             _ => *self,
         }
     }
@@ -114,6 +116,8 @@ impl Piece {
             PieceType::PromotedKnight => Piece::new(PieceType::Knight, self.color),
             PieceType::PromotedLance => Piece::new(PieceType::Lance, self.color),
             PieceType::PromotedPawn => Piece::new(PieceType::Pawn, self.color),
+            PieceType::Horse => Piece::new(PieceType::Bishop, self.color),
+            PieceType::Dragon => Piece::new(PieceType::Rook, self.color),
             _ => *self,
         }
     }

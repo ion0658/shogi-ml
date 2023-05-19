@@ -1,12 +1,12 @@
-use std::sync::Arc;
+use std::{sync::Arc, vec};
 
 use crate::{
     board::{
         create_initial_board, create_move_range, get_num_array, is_checked, move_piece,
-        print_boards, Boards,
+        print_boards, Boards, LegalMove,
     },
     inference::Inference,
-    piece::Color,
+    piece::{Color, Piece},
 };
 use anyhow::Result;
 use rayon::prelude::*;
@@ -41,6 +41,10 @@ impl Game {
     #[allow(unused)]
     pub fn print(&self) {
         print_boards(&self.boards)
+    }
+
+    pub fn current_turn(&self) -> Color {
+        self.turn
     }
 
     pub async fn save(&self, generation: i32) -> Result<()> {
@@ -83,5 +87,36 @@ impl Game {
         self.turn = self.turn.opponent();
         std::thread::yield_now();
         Ok(GameState::Playing)
+    }
+
+    pub fn get_legal_moves(&self) -> Result<Vec<(Piece, LegalMove)>, GameState> {
+        let move_range = create_move_range(&self.boards, self.turn);
+        let moves = move_range
+            .par_iter()
+            .filter(|&range| {
+                let boards = move_piece(self.boards, *range);
+                !is_checked(&boards[0], self.turn)
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if moves.len() == 0 {
+            return Err(GameState::Checkmate(self.turn.opponent()));
+        }
+        let moves = moves
+            .par_iter()
+            .map(|m| {
+                let p =
+                    self.boards[m.from.z as usize][m.from.y as usize][m.from.x as usize].unwrap();
+                (p, m.clone())
+            })
+            .collect();
+        Ok(moves)
+    }
+
+    pub fn play_next(&mut self, movement: &LegalMove) {
+        let boards = move_piece(self.boards, *movement);
+        self.boards = boards;
+        self.boards_record.push(boards);
+        self.turn = self.turn.opponent();
     }
 }
