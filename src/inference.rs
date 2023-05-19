@@ -16,9 +16,13 @@ pub struct Inference {
 }
 
 impl Inference {
-    pub fn init(generation: i32) -> Result<Self> {
+    pub fn init(generation: i32, color: Color) -> Result<Self> {
         let i = if generation > 0 {
-            let file_name = format!("model/gen_{}", generation - 1);
+            let color_str = match color {
+                Color::Black => "b",
+                Color::White => "w",
+            };
+            let file_name = format!("model/gen_{}{}", generation - 1, color_str);
             let (session, input_node, output_node) = Self::init_session(file_name)?;
             Self {
                 session: Some(session),

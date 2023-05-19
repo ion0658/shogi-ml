@@ -8,7 +8,7 @@ import shutil
 
 BOARD_SIZE = 9
 BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 4
-EPOCHS = 5
+EPOCHS = 25
 
 gen = 0
 if len(sys.argv) > 1:
@@ -68,7 +68,7 @@ def show_graph(history):
     # グラフ表示
     plt.show()
 
-def train():
+def train(color:str):
     x, y = load_game_data()
 
     # 4. ニューラルネットワークモデルの定義
@@ -87,16 +87,19 @@ def train():
 
     # 学習開始
     history = model.fit(x, y, epochs=EPOCHS, validation_split=0.2)
-    model.save(file_name)
+    model.save(file_name + color)
     #show_graph(history)
     
 
 def check_dir():
     if not os.path.exists("model"):
         os.mkdir("model")
-    if os.path.exists(file_name):
-        shutil.rmtree(file_name)
+    if os.path.exists(file_name + "w"):
+        shutil.rmtree(file_name + "w")
+    if os.path.exists(file_name + "b"):
+        shutil.rmtree(file_name + "b")
 
 check_dir()
-train()
+train("b")
+train("w")
 
