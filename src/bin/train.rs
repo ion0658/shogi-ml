@@ -3,7 +3,7 @@ use shogi_alg::{game::*, inference::Inference};
 use sqlx::{migrate::MigrateDatabase, Sqlite};
 use std::{env, path::Path, sync::Arc};
 
-const PARALLEL: usize = 2;
+const PARALLEL: usize = 4;
 
 #[tokio::main]
 async fn main() -> Result<()> {
