@@ -92,6 +92,7 @@ impl Inference {
             Tensor::new(&[boards.len() as u64, 4, BOARD_SIZE as u64, BOARD_SIZE as u64])
                 .with_values(&data)?;
 
+        println!("input_tensor: {:?}", input_tensor);
         // 推論の実行
         let mut args = SessionRunArgs::new();
         args.add_feed(&input_node, 0, &input_tensor);
