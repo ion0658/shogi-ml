@@ -267,11 +267,20 @@ pub fn print_boards(boards: &Boards) {
     println!("{}", board_data);
 }
 
-pub fn select_best_board(boards: &[Boards]) -> Boards {
-    let mut rng = rand::thread_rng();
-    let len = boards.len();
-    let index = rng.gen_range(0..len);
-    boards[index].clone()
+pub fn select_best_board(boards: &[Boards], turn: Color) -> Boards {
+    let checkmate_boards = boards
+        .par_iter()
+        .filter(|boards| is_checkmate(boards, turn.opponent()))
+        .collect::<Vec<_>>();
+
+    if let Some(&boards) = checkmate_boards.first() {
+        boards.clone()
+    } else {
+        let mut rng = rand::thread_rng();
+        let len = boards.len();
+        let index = rng.gen_range(0..len);
+        boards[index].clone()
+    }
 }
 
 // 二歩判定
@@ -303,4 +312,55 @@ pub fn get_num_array(boards: &Boards) -> BoardsAsNum {
         });
     });
     b
+}
+
+pub fn is_checkmate(boards: &Boards, turn: Color) -> bool {
+    create_move_range(boards, turn)
+        .par_iter()
+        .filter_map(|range| {
+            let boards = move_piece(*boards, *range);
+            let checked = is_checked(&boards[0], turn);
+            if checked {
+                None
+            } else {
+                Some(boards)
+            }
+        })
+        .count()
+        == 0
+}
+
+pub fn is_checked(board: &Board, color: Color) -> bool {
+    // 王の位置を検索
+    let king_position = find_king_position(board, color);
+
+    board.par_iter().enumerate().any(|(y, row)| {
+        row.par_iter().enumerate().any(|(x, piece)| {
+            if let Some(piece) = piece {
+                if piece.color != color {
+                    return piece.can_capture_king(
+                        Position::new(x as i32, y as i32, 0),
+                        board,
+                        king_position,
+                    );
+                }
+            }
+            false
+        })
+    })
+}
+
+// 王の位置を検索するヘルパー関数
+fn find_king_position(board: &Board, color: Color) -> Position {
+    for y in 0..BOARD_SIZE {
+        for x in 0..BOARD_SIZE {
+            if let Some(piece) = board[y][x] {
+                if piece.piece_type == PieceType::King && piece.color == color {
+                    return Position::new(x as i32, y as i32, 0);
+                }
+            }
+        }
+    }
+
+    panic!("King not found on the board!");
 }

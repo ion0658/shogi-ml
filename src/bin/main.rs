@@ -11,16 +11,21 @@ async fn main() -> Result<()> {
     } else {
         1
     };
-    run(game_number).await?;
+    let generation = if args.len() > 2 {
+        args[2].parse::<i32>().unwrap_or_default()
+    } else {
+        0
+    };
+    run(game_number, generation).await?;
     Ok(())
 }
 
-async fn run(game_number: usize) -> Result<()> {
+async fn run(game_number: usize, generation: i32) -> Result<()> {
     let pool = get_connection().await?;
     sqlx::migrate!().run(&pool).await?;
     let mut tasks = vec![];
     for _ in 0..game_number {
-        tasks.push(tokio::spawn(game_task(pool.clone())));
+        tasks.push(tokio::spawn(game_task(pool.clone(), generation)));
     }
     let elapsed_list = futures::future::try_join_all(tasks)
         .await?
@@ -35,7 +40,7 @@ async fn run(game_number: usize) -> Result<()> {
     Ok(())
 }
 
-async fn game_task(pool: sqlx::SqlitePool) -> Result<u128> {
+async fn game_task(pool: sqlx::SqlitePool, generation: i32) -> Result<u128> {
     let mut game = Game::new(pool);
     let mut count = 0;
     let start = std::time::Instant::now();
@@ -48,6 +53,7 @@ async fn game_task(pool: sqlx::SqlitePool) -> Result<u128> {
             }
             _ => {
                 count += 1;
+                //game.print();
             }
         }
     }
@@ -58,7 +64,7 @@ async fn game_task(pool: sqlx::SqlitePool) -> Result<u128> {
         count,
         elapsed.as_micros() / count
     );
-    game.save().await?;
+    game.save(generation).await?;
 
     Ok(elapsed.as_micros() / count)
 }
