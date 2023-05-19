@@ -85,7 +85,6 @@ impl Game {
         self.boards = best_boards;
         self.boards_record.push(best_boards);
         self.turn = self.turn.opponent();
-        std::thread::yield_now();
         Ok(GameState::Playing)
     }
 

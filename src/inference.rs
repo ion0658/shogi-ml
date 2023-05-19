@@ -13,6 +13,7 @@ pub struct Inference {
     session: Option<Session>,
     input_node: Option<Operation>,
     output_node: Option<Operation>,
+    generation: i32,
 }
 
 impl Inference {
@@ -24,12 +25,14 @@ impl Inference {
                 session: Some(session),
                 input_node: Some(input_node),
                 output_node: Some(output_node),
+                generation,
             }
         } else {
             Self {
                 session: None,
                 input_node: None,
                 output_node: None,
+                generation,
             }
         };
         Ok(i)
@@ -65,7 +68,7 @@ impl Inference {
         if let (Some(session), Some(input_node), Some(output_node)) =
             (&self.session, &self.input_node, &self.output_node)
         {
-            if !mode || rng.gen_ratio(1, 2) {
+            if !mode || !rng.gen_ratio(1, (self.generation + 1) as u32) {
                 let index = Self::inference(turn, boards, session, input_node, output_node)?;
                 return Ok(boards[index].clone());
             }

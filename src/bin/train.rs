@@ -3,6 +3,8 @@ use shogi_alg::{game::*, inference::Inference};
 use sqlx::{migrate::MigrateDatabase, Sqlite};
 use std::{env, path::Path, sync::Arc};
 
+const PARALLEL: usize = 4;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -16,31 +18,23 @@ async fn main() -> Result<()> {
     } else {
         0
     };
-
-    run(game_number, generation).await?;
+    let game_number = game_number / PARALLEL;
+    let mut tasks = vec![];
+    for _ in 0..PARALLEL {
+        tasks.push(tokio::spawn(train_task(game_number, generation)));
+    }
+    futures::future::try_join_all(tasks).await?;
     Ok(())
 }
 
-async fn run(game_number: usize, generation: i32) -> Result<()> {
+async fn train_task(game_number: usize, generation: i32) -> Result<()> {
     let inference = Arc::new(Inference::init(generation)?);
     let pool = get_connection().await?;
     sqlx::migrate!().run(&pool).await?;
-    let mut tasks = vec![];
+    let mut elapsed_list = vec![];
     for _ in 0..game_number {
-        tasks.push(tokio::spawn(game_task(
-            pool.clone(),
-            generation,
-            inference.clone(),
-        )));
+        elapsed_list.push(game_task(pool.clone(), generation, inference.clone()).await?);
     }
-    let elapsed_list = futures::future::try_join_all(tasks)
-        .await?
-        .iter()
-        .filter_map(|e| match e {
-            Ok(elapsed) => Some(*elapsed),
-            Err(_) => None,
-        })
-        .collect::<Vec<_>>();
     let avg = elapsed_list.iter().sum::<u128>() / elapsed_list.len() as u128;
     println!("Average time: {} (micro sec)/move", avg);
     Ok(())
@@ -52,14 +46,12 @@ async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>)
     let start = std::time::Instant::now();
     loop {
         match game.next()? {
-            GameState::Checkmate(color) => {
-                println!("Checkmate! {:?} is Winner!", color);
-                // game.print();
+            GameState::Checkmate(_color) => {
                 break;
             }
             _ => {
                 count += 1;
-                //game.print();
+                tokio::task::yield_now().await;
             }
         }
     }
