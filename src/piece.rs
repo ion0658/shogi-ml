@@ -80,18 +80,17 @@ impl Piece {
 
     pub fn get_u8(&self) -> u8 {
         self.piece_type as u8
-        // match self.color {
-        //     Color::Black => self.piece_type as u8,
-        //     Color::White => u8::MAX- self.piece_type as u8,
-        // }
     }
 
     pub fn can_revolte(&self) -> bool {
         match self.piece_type {
-            PieceType::Silver => true,
-            PieceType::Knight => true,
-            PieceType::Lance => true,
-            PieceType::Pawn => true,
+            PieceType::Silver
+            | PieceType::Knight
+            | PieceType::Lance
+            | PieceType::Pawn
+            | PieceType::Bishop
+            | PieceType::Rook => true,
+
             _ => false,
         }
     }

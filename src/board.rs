@@ -235,34 +235,36 @@ pub fn move_piece(mut boards: Boards, legal_move: LegalMove) -> Boards {
 
 pub fn print_boards(boards: &Boards) {
     let mut board_data = format!(
-        "{:->46}\n|{:>19}\x1b[31m先  手\x1b[m{:>19}|\n{:->46}\n",
+        "{:->92}\n|{:>19}\x1b[31m先  手\x1b[m{:>19}|\n{:->92}\n",
         "", "", "", ""
     );
 
-    boards.iter().enumerate().for_each(|(z, board)| {
-        board.iter().for_each(|row| {
-            row.iter().for_each(|p| match p {
-                None => board_data.push_str(&format!("|{: >4}", "")),
-                Some(piece) => {
-                    if piece.color == Color::Black {
-                        board_data.push_str(&format!("| \x1b[31m{}\x1b[m ", piece))
-                    } else {
-                        board_data.push_str(&format!("| {} ", piece))
-                    }
+    for y in 0..BOARD_SIZE {
+        boards[0][y].iter().for_each(|p| match p {
+            None => board_data.push_str(&format!("|{: >4}", "")),
+            Some(piece) => {
+                if piece.color == Color::Black {
+                    board_data.push_str(&format!("| \x1b[31m{}\x1b[m ", piece))
+                } else {
+                    board_data.push_str(&format!("| {} ", piece))
                 }
-            });
-            board_data.push_str("|\n");
+            }
         });
-        if z == 0 {
-            board_data.push_str(&format!("{:->46}\n|{:>19}後  手{:>19}|\n", "", "", "",));
-            board_data.push_str(&format!(
-                "{:->46}\n|{:>19}持ち駒{:>19}|\n{:->46}\n",
-                "", "", "", ""
-            ));
-        } else {
-            board_data.push_str(&format!("{:->46}\n", "",));
-        }
-    });
+        board_data.push_str("|");
+        boards[1][y].iter().for_each(|p| match p {
+            None => board_data.push_str(&format!("|{: >4}", "")),
+            Some(piece) => {
+                if piece.color == Color::Black {
+                    board_data.push_str(&format!("| \x1b[31m{}\x1b[m ", piece))
+                } else {
+                    board_data.push_str(&format!("| {} ", piece))
+                }
+            }
+        });
+        board_data.push_str("|\n");
+    }
+    board_data.push_str(&format!("{:->92}\n|{:>19}後  手{:>19}|\n", "", "", "",));
+    board_data.push_str(&format!("{:->92}\n", "",));
     println!("{}", board_data);
 }
 
