@@ -38,8 +38,7 @@ pub type Board = [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE];
 // 持ち駒を含むボード全体を表す3次元配列
 pub type Boards = [Board; PAGE_SIZE];
 
-pub type BoardAsNum = [[u8; BOARD_SIZE]; BOARD_SIZE];
-pub type BoardsAsNum = [BoardAsNum; PAGE_SIZE * 2];
+pub type BoardAsNum = [[[u8; PAGE_SIZE * 2]; BOARD_SIZE]; BOARD_SIZE];
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LegalMove {
@@ -280,17 +279,17 @@ pub fn is_nifu(board: &Board, m: LegalMove, color: Color) -> bool {
     false
 }
 
-pub fn get_num_array(boards: &Boards) -> BoardsAsNum {
-    let mut b: BoardsAsNum = [[[0; BOARD_SIZE]; BOARD_SIZE]; PAGE_SIZE * 2];
+pub fn get_num_array(boards: &Boards) -> BoardAsNum {
+    let mut b: BoardAsNum = [[[0; PAGE_SIZE * 2]; BOARD_SIZE]; BOARD_SIZE];
     boards.iter().enumerate().for_each(|(z, board)| {
         board.iter().enumerate().for_each(|(y, row)| {
             row.iter().enumerate().for_each(|(x, p)| {
                 if let Some(piece) = p {
                     match (piece.color, z) {
-                        (Color::Black, 0) => b[0][y][x] = piece.get_u8(),
-                        (Color::White, 0) => b[1][y][x] = piece.get_u8(),
-                        (Color::Black, _) => b[1][y][x] = piece.get_u8(),
-                        (Color::White, _) => b[2][y][x] = piece.get_u8(),
+                        (Color::Black, 0) => b[x][y][0] = piece.get_u8(),
+                        (Color::White, 0) => b[x][y][1] = piece.get_u8(),
+                        (Color::Black, _) => b[x][y][2] = piece.get_u8(),
+                        (Color::White, _) => b[x][y][3] = piece.get_u8(),
                     }
                 }
             });

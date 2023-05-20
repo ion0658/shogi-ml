@@ -34,7 +34,7 @@ def load_game_data():
     for row in game_data:
         (winner, binary) = row
         array_1d  = np.frombuffer(binary, dtype=np.uint8)
-        record = array_1d.reshape([int(len(array_1d)/BOARD_SQ_SIZE), 4, BOARD_SIZE, BOARD_SIZE])
+        record = array_1d.reshape([int(len(array_1d)/BOARD_SQ_SIZE), BOARD_SIZE, BOARD_SIZE, 4])
         data_count += int(len(array_1d)/BOARD_SQ_SIZE)
         if winner == 0:
             black_win_count += 1
@@ -81,10 +81,12 @@ def train():
 
     # 4. ニューラルネットワークモデルの定義
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(4, BOARD_SIZE, BOARD_SIZE), name="board_in"),
+        tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(BOARD_SIZE, BOARD_SIZE, 4), name="board_in"),
+        tf.keras.layers.MaxPooling2D((2, 2)),
+        tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(256, activation='relu'),
-        #tf.keras.layers.Dropout(rate=0.2),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dropout(rate=0.2),
         tf.keras.layers.Dense(2, activation='softmax', name="winner_out")
     ])
     model.summary()

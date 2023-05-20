@@ -88,11 +88,14 @@ impl Inference {
             .collect::<Vec<_>>();
         let data = boards.concat().concat().concat();
         // 入力Tensorの作成
-        let input_tensor: tensorflow::Tensor<f32> =
-            Tensor::new(&[boards.len() as u64, 4, BOARD_SIZE as u64, BOARD_SIZE as u64])
-                .with_values(&data)?;
+        let input_tensor: tensorflow::Tensor<f32> = Tensor::new(&[
+            boards.len() as u64,
+            BOARD_SIZE as u64,
+            BOARD_SIZE as u64,
+            (PAGE_SIZE * 2) as u64,
+        ])
+        .with_values(&data)?;
 
-        println!("input_tensor: {:?}", input_tensor);
         // 推論の実行
         let mut args = SessionRunArgs::new();
         args.add_feed(&input_node, 0, &input_tensor);
@@ -112,26 +115,25 @@ impl Inference {
     }
 }
 
-type BoardAsNum = [[f32; BOARD_SIZE]; BOARD_SIZE];
-type BoardsAsNum = [BoardAsNum; PAGE_SIZE * 2];
-fn get_num_array(boards: &Boards) -> BoardsAsNum {
-    let mut b: BoardsAsNum = [[[0.0; BOARD_SIZE]; BOARD_SIZE]; PAGE_SIZE * 2];
+type BoardAsNum = [[[f32; PAGE_SIZE * 2]; BOARD_SIZE]; BOARD_SIZE];
+fn get_num_array(boards: &Boards) -> BoardAsNum {
+    let mut b: BoardAsNum = [[[0.0; 4]; BOARD_SIZE]; BOARD_SIZE];
     boards.iter().enumerate().for_each(|(z, board)| {
         board.iter().enumerate().for_each(|(y, row)| {
             row.iter().enumerate().for_each(|(x, p)| {
                 if let Some(piece) = p {
                     match (piece.color, z) {
                         (Color::Black, 0) => {
-                            b[0][y][x] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                            b[x][y][0] = piece.get_u8() as f32 / PieceType::get_max() as f32
                         }
                         (Color::White, 0) => {
-                            b[1][y][x] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                            b[x][y][1] = piece.get_u8() as f32 / PieceType::get_max() as f32
                         }
                         (Color::Black, _) => {
-                            b[1][y][x] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                            b[x][y][2] = piece.get_u8() as f32 / PieceType::get_max() as f32
                         }
                         (Color::White, _) => {
-                            b[2][y][x] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                            b[x][y][3] = piece.get_u8() as f32 / PieceType::get_max() as f32
                         }
                     }
                 }
