@@ -29,11 +29,13 @@ async fn main() -> Result<()> {
     let mut tasks = vec![];
     let pool = get_connection().await?;
     sqlx::migrate!().run(&pool).await?;
+    let inference = Arc::new(Inference::init(generation)?);
     for _ in 0..para {
         tasks.push(tokio::spawn(train_task(
             pool.clone(),
             game_number,
             generation,
+            inference.clone(),
         )));
     }
     futures::future::try_join_all(tasks).await?;
@@ -44,9 +46,8 @@ async fn train_task(
     pool: sqlx::sqlite::SqlitePool,
     game_number: usize,
     generation: i32,
+    inference: Arc<Inference>,
 ) -> Result<()> {
-    let inference = Arc::new(Inference::init(generation)?);
-
     let mut elapsed_list = vec![];
     for _ in 0..game_number {
         elapsed_list.push(game_task(pool.clone(), generation, inference.clone()).await?);
