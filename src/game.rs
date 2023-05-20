@@ -47,16 +47,15 @@ impl Game {
         self.turn
     }
 
-    pub async fn save(&self, generation: i32) -> Result<()> {
+    pub async fn save(&self) -> Result<()> {
         let records = self
             .boards_record
             .iter()
             .map(|boards| get_num_array(boards))
             .collect::<Vec<_>>();
         let record = records.as_slice().concat().concat().concat();
-        let query = sqlx::query("INSERT INTO KIFU (WINNER, GENERATION, RECORDS) VALUES (?, ?, ?)")
+        let query = sqlx::query("INSERT INTO KIFU (WINNER, RECORDS) VALUES (?, ?)")
             .bind(self.turn.opponent() as i8)
-            .bind(generation)
             .bind(&record);
         query.execute(&self.pool).await?;
         Ok(())

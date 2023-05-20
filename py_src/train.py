@@ -3,25 +3,17 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import os
-import sys
-import shutil
 
 BOARD_SIZE = 9
 BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 4
-
-gen = 0
-if len(sys.argv) > 1:
-    gen = int(sys.argv[1])
-file_name = "model/gen_{}".format(gen)
-epochs = 5
-if len(sys.argv) > 2:
-    epochs = int(sys.argv[2])
+MODEL_DIR = "model/model"
+EPOCHS = 20
 
 def load_game_data():
     dbname = "db/data.db"
     conn = sqlite3.connect(dbname)
     cur = conn.cursor()
-    sql = "SELECT WINNER, RECORDS FROM KIFU WHERE GENERATION={}".format(gen)
+    sql = "SELECT WINNER, RECORDS FROM KIFU"
     cur.execute(sql)
     game_data = cur.fetchall()
     cur.close()
@@ -49,14 +41,31 @@ def load_game_data():
     Y = np.array(y)
     return (X, Y)
 
+def load_model():
+    if os.path.exists(MODEL_DIR):
+        model = tf.keras.models.load_model(MODEL_DIR)
+        return model
+    else:
+        model = tf.keras.models.Sequential([
+            tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(BOARD_SIZE, BOARD_SIZE, 4), name="board_in"),
+            tf.keras.layers.MaxPooling2D((2, 2)),
+            tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dropout(rate=0.2),
+            tf.keras.layers.Dense(2, activation='softmax', name="winner_out")
+        ])
+        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        return model
+
 def show_graph(history):
         # グラフ描画(2画面)
     plt.figure(figsize=(16, 8))
 
     # epochごとのlossを表示
     plt.subplot(1, 2, 1)
-    plt.plot(range(1, epochs + 1), history.history['loss'], '-o')
-    plt.plot(range(1, epochs + 1), history.history['val_loss'], '-o')
+    plt.plot(range(1, EPOCHS + 1), history.history['loss'], '-o')
+    plt.plot(range(1, EPOCHS + 1), history.history['val_loss'], '-o')
     plt.title('loss_transition')
     plt.ylabel('loss')
     plt.xlabel('epoch')
@@ -65,8 +74,8 @@ def show_graph(history):
 
     # epochごとのaccuracyを表示
     plt.subplot(1, 2, 2)
-    plt.plot(range(1, epochs+1), history.history['accuracy'], '-o')
-    plt.plot(range(1, epochs+1), history.history['val_accuracy'], '-o')
+    plt.plot(range(1, EPOCHS+1), history.history['accuracy'], '-o')
+    plt.plot(range(1, EPOCHS+1), history.history['val_accuracy'], '-o')
     plt.title('accuracy_transition')
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
@@ -76,37 +85,12 @@ def show_graph(history):
     # グラフ表示
     plt.show()
 
-def train():
-    x, y = load_game_data()
+x, y = load_game_data()
 
-    # 4. ニューラルネットワークモデルの定義
-    model = tf.keras.models.Sequential([
-        tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(BOARD_SIZE, BOARD_SIZE, 4), name="board_in"),
-        tf.keras.layers.MaxPooling2D((2, 2)),
-        tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dropout(rate=0.2),
-        tf.keras.layers.Dense(2, activation='softmax', name="winner_out")
-    ])
-    model.summary()
+model = load_model()
+model.summary()
 
-
-    # モデルを構築
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-    # 学習開始
-    history = model.fit(x, y, epochs=epochs, validation_split=0.2)
-    model.save(file_name)
-    #show_graph(history)
-    
-
-def check_dir():
-    if not os.path.exists("model"):
-        os.mkdir("model")
-    if os.path.exists(file_name):
-        shutil.rmtree(file_name)
-
-check_dir()
-train()
-
+# 学習開始
+history = model.fit(x, y, epochs=EPOCHS, validation_split=0.2)
+model.save(MODEL_DIR)
+#show_graph(history)

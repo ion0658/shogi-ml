@@ -10,54 +10,29 @@ async fn main() -> Result<()> {
     } else {
         1
     };
-    let generation = if args.len() > 2 {
-        args[2].parse::<i32>().unwrap_or_default()
-    } else {
-        0
-    };
-    let para = if args.len() > 3 {
-        let para = args[3].parse::<usize>().unwrap_or(1);
-        match para {
-            0 => 1,
-            _ => para,
-        }
-    } else {
-        num_cpus::get()
-    };
 
-    let game_number = game_number / para;
-    let mut tasks = vec![];
     let pool = get_connection().await?;
     sqlx::migrate!().run(&pool).await?;
-    let inference = Arc::new(Inference::init(generation)?);
-    for _ in 0..para {
-        tasks.push(tokio::spawn(train_task(
-            pool.clone(),
-            game_number,
-            generation,
-            inference.clone(),
-        )));
-    }
-    futures::future::try_join_all(tasks).await?;
+    let inference = Arc::new(Inference::init()?);
+    train_task(pool.clone(), game_number, inference.clone()).await?;
     Ok(())
 }
 
 async fn train_task(
     pool: sqlx::sqlite::SqlitePool,
     game_number: usize,
-    generation: i32,
     inference: Arc<Inference>,
 ) -> Result<()> {
     let mut elapsed_list = vec![];
     for _ in 0..game_number {
-        elapsed_list.push(game_task(pool.clone(), generation, inference.clone()).await?);
+        elapsed_list.push(game_task(pool.clone(), inference.clone()).await?);
     }
     let avg = elapsed_list.iter().sum::<u128>() / elapsed_list.len() as u128;
     println!("Average time: {} (micro sec)/move", avg);
     Ok(())
 }
 
-async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>) -> Result<u128> {
+async fn game_task(pool: sqlx::SqlitePool, inf: Arc<Inference>) -> Result<u128> {
     let mut game = Game::new(true, pool, inf);
     let mut count = 0;
     let start = std::time::Instant::now();
@@ -72,13 +47,13 @@ async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>)
         }
     }
     let elapsed = start.elapsed();
-    println!(
-        "Game finished in {:?} with {} moves {} [(micro sec)/move]",
-        elapsed,
-        count,
-        elapsed.as_micros() / count
-    );
-    game.save(generation).await?;
+    // println!(
+    //     "Game finished in {:?} with {} moves {} [(micro sec)/move]",
+    //     elapsed,
+    //     count,
+    //     elapsed.as_micros() / count
+    // );
+    game.save().await?;
 
     Ok(elapsed.as_micros() / count)
 }

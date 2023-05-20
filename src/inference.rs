@@ -16,10 +16,11 @@ pub struct Inference {
 }
 
 impl Inference {
-    pub fn init(generation: i32) -> Result<Self> {
-        let i = if generation > 0 {
-            let file_name = format!("model/gen_{}", generation - 1);
-            let (session, input_node, output_node) = Self::init_session(file_name)?;
+    pub fn init() -> Result<Self> {
+        let model_path = "model/model";
+        let path = std::path::Path::new(model_path);
+        let i = if path.exists() {
+            let (session, input_node, output_node) = Self::init_session(model_path)?;
             Self {
                 session: Some(session),
                 input_node: Some(input_node),
@@ -35,7 +36,7 @@ impl Inference {
         Ok(i)
     }
 
-    pub fn init_session(file_name: String) -> Result<(Session, Operation, Operation)> {
+    pub fn init_session(file_name: &str) -> Result<(Session, Operation, Operation)> {
         let mut graph = Graph::new();
         let bundle =
             SavedModelBundle::load(&SessionOptions::new(), &["serve"], &mut graph, file_name)?;

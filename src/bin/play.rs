@@ -1,31 +1,24 @@
 use anyhow::Result;
 use shogi_alg::{db::get_connection, game::*, inference::Inference, piece::Color};
-use std::{env, io::Write, sync::Arc};
+use std::{io::Write, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let generation = if args.len() > 1 {
-        args[1].parse::<i32>().unwrap_or_default()
-    } else {
-        0
-    };
-
-    run(generation).await?;
+    run().await?;
     Ok(())
 }
 
-async fn run(generation: i32) -> Result<()> {
-    let inference = Arc::new(Inference::init(generation)?);
+async fn run() -> Result<()> {
+    let inference = Arc::new(Inference::init()?);
     let pool = get_connection().await?;
     sqlx::migrate!().run(&pool).await?;
 
-    let _ = game_task(pool, generation, inference).await?;
+    let _ = game_task(pool, inference).await?;
 
     Ok(())
 }
 
-async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>) -> Result<()> {
+async fn game_task(pool: sqlx::SqlitePool, inf: Arc<Inference>) -> Result<()> {
     println!("Start Game");
     print!("Select Color (Black: 0, White: _): ");
     std::io::stdout().flush()?;
@@ -82,7 +75,7 @@ async fn game_task(pool: sqlx::SqlitePool, generation: i32, inf: Arc<Inference>)
         }
     }
 
-    game.save(generation).await?;
+    game.save().await?;
     Ok(())
 }
 
