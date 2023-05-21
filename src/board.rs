@@ -203,31 +203,144 @@ pub fn move_piece(mut boards: Boards, legal_move: LegalMove) -> Boards {
     // 移動元を空欄にする
     boards[legal_move.from.z as usize][legal_move.from.y as usize][legal_move.from.x as usize] =
         None;
+    if current_piece.is_none() {
+        return boards;
+    }
     // 駒を取った場合の処理
-    if let Some(mut piece) = current_piece {
-        piece.color = piece.color.opponent();
-        match piece.color {
-            Color::Black => {
-                'outer: for y in 0..BOARD_SIZE {
-                    for x in 0..BOARD_SIZE {
-                        if boards[1][y][x].is_none() {
-                            boards[1][y][x] = Some(piece.revolute_back());
-                            break 'outer;
-                        }
-                    }
-                }
-            }
-            Color::White => {
-                'outer: for y in (0..BOARD_SIZE).rev() {
-                    for x in (0..BOARD_SIZE).rev() {
-                        if boards[1][y][x].is_none() {
-                            boards[1][y][x] = Some(piece.revolute_back());
-                            break 'outer;
-                        }
+    let mut piece = current_piece.unwrap();
+    piece.color = piece.color.opponent();
+    match (piece.piece_type, piece.color) {
+        (PieceType::Pawn, Color::Black) => {
+            'outer: for y in 0..2 {
+                for x in 0..BOARD_SIZE {
+                    let p = boards[1][y][x];
+                    if p.is_none() {
+                        boards[1][y][x] = Some(piece);
+                        break 'outer;
                     }
                 }
             }
         }
+        (PieceType::Gold, Color::Black) => {
+            for x in 0..4 {
+                let p = boards[1][2][x];
+                if p.is_none() {
+                    boards[1][2][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Silver, Color::Black) => {
+            for x in 4..8 {
+                let p = boards[1][2][x];
+                if p.is_none() {
+                    boards[1][2][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Knight, Color::Black) => {
+            for x in 0..4 {
+                let p = boards[1][3][x];
+                if p.is_none() {
+                    boards[1][3][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Lance, Color::Black) => {
+            for x in 4..8 {
+                let p = boards[1][3][x];
+                if p.is_none() {
+                    boards[1][3][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Bishop, Color::Black) => {
+            for x in 0..2 {
+                let p = boards[1][4][x];
+                if p.is_none() {
+                    boards[1][4][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Rook, Color::Black) => {
+            for x in 2..4 {
+                let p = boards[1][4][x];
+                if p.is_none() {
+                    boards[1][4][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Pawn, Color::White) => {
+            'outer: for y in (BOARD_SIZE - 2..BOARD_SIZE).rev() {
+                for x in (0..BOARD_SIZE).rev() {
+                    let p = boards[1][y][x];
+                    if p.is_none() {
+                        boards[1][y][x] = Some(piece);
+                        break 'outer;
+                    }
+                }
+            }
+        }
+        (PieceType::Gold, Color::White) => {
+            for x in (BOARD_SIZE - 4..BOARD_SIZE).rev() {
+                let p = boards[1][6][x];
+                if p.is_none() {
+                    boards[1][6][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Silver, Color::White) => {
+            for x in (BOARD_SIZE - 8..BOARD_SIZE - 4).rev() {
+                let p = boards[1][6][x];
+                if p.is_none() {
+                    boards[1][6][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Knight, Color::White) => {
+            for x in (BOARD_SIZE - 4..BOARD_SIZE).rev() {
+                let p = boards[1][5][x];
+                if p.is_none() {
+                    boards[1][5][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Lance, Color::White) => {
+            for x in (BOARD_SIZE - 8..BOARD_SIZE - 4).rev() {
+                let p = boards[1][5][x];
+                if p.is_none() {
+                    boards[1][5][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Bishop, Color::White) => {
+            for x in (BOARD_SIZE - 2..BOARD_SIZE).rev() {
+                let p = boards[1][4][x];
+                if p.is_none() {
+                    boards[1][4][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        (PieceType::Rook, Color::White) => {
+            for x in (BOARD_SIZE - 4..BOARD_SIZE - 2).rev() {
+                let p = boards[1][4][x];
+                if p.is_none() {
+                    boards[1][4][x] = Some(piece);
+                    break;
+                }
+            }
+        }
+        _ => {}
     }
     boards
 }

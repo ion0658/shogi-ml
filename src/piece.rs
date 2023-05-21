@@ -208,12 +208,32 @@ impl Piece {
                                 to: Position::new(x as i32, y as i32, 0),
                                 revolute: false,
                             };
-                            if self.piece_type == PieceType::Pawn && is_nifu(board, m, self.color) {
-                                None
-                            } else {
-                                Some(m)
+                            match (self.piece_type, self.color) {
+                                (PieceType::Pawn | PieceType::Lance, Color::Black)
+                                    if m.to.y == BOARD_SIZE as i32 - 1 =>
+                                {
+                                    None
+                                }
+                                (PieceType::Pawn | PieceType::Lance, Color::White)
+                                    if m.to.y == 0 =>
+                                {
+                                    None
+                                }
+                                (PieceType::Pawn, _) => {
+                                    if is_nifu(board, m, self.color) {
+                                        None
+                                    } else {
+                                        Some(m)
+                                    }
+                                }
+                                (PieceType::Knight, Color::Black)
+                                    if m.to.y >= BOARD_SIZE as i32 - 2 =>
+                                {
+                                    None
+                                }
+                                (PieceType::Knight, Color::White) if m.to.y <= 1 => None,
+                                _ => Some(m),
                             }
-                            //Some(m)
                         }
                     })
                     .collect::<Vec<_>>();
@@ -241,36 +261,10 @@ impl Piece {
                         let piece = board[new_position.y as usize][new_position.x as usize];
                         if piece.is_none() {
                             // 空きマスなら動ける
-                            let m = LegalMove {
-                                from: position,
-                                to: new_position,
-                                revolute: false,
-                            };
-                            move_range.push(m);
-                            if m.can_revolte(self.color) && self.can_revolte() {
-                                let rm = LegalMove {
-                                    from: position,
-                                    to: new_position,
-                                    revolute: true,
-                                };
-                                move_range.push(rm);
-                            }
+                            self.add_move_range(&mut move_range, position, new_position);
                         } else if piece.unwrap().color != self.color {
                             // 相手の駒ならそこまで動けるが、それ以上は動けない
-                            let m = LegalMove {
-                                from: position,
-                                to: new_position,
-                                revolute: false,
-                            };
-                            move_range.push(m);
-                            if m.can_revolte(self.color) && self.can_revolte() {
-                                let rm = LegalMove {
-                                    from: position,
-                                    to: new_position,
-                                    revolute: true,
-                                };
-                                move_range.push(rm);
-                            }
+                            self.add_move_range(&mut move_range, position, new_position);
                             break;
                         } else {
                             // 自分の駒ならそこまで動けない
@@ -280,10 +274,47 @@ impl Piece {
                     if (dx != 0 && x == *vx) || (dy != 0 && y == *vy) {
                         break;
                     }
+                    if x > BOARD_SIZE as i32 || y > BOARD_SIZE as i32 {
+                        break;
+                    }
                 }
                 move_range
             })
             .collect()
+    }
+
+    fn add_move_range(
+        &self,
+        move_range: &mut Vec<LegalMove>,
+        position: Position,
+        new_position: Position,
+    ) {
+        let m = LegalMove {
+            from: position,
+            to: new_position,
+            revolute: false,
+        };
+        match (self.piece_type, self.color) {
+            (PieceType::Pawn | PieceType::Lance, Color::Black)
+                if m.to.y != BOARD_SIZE as i32 - 1 =>
+            {
+                move_range.push(m)
+            }
+            (PieceType::Pawn | PieceType::Lance, Color::White) if m.to.y != 0 => move_range.push(m),
+            (PieceType::Knight, Color::Black) if m.to.y < BOARD_SIZE as i32 - 2 => {
+                move_range.push(m)
+            }
+            (PieceType::Knight, Color::White) if m.to.y > 1 => move_range.push(m),
+            _ => move_range.push(m),
+        }
+        if m.can_revolte(self.color) && self.can_revolte() {
+            let rm = LegalMove {
+                from: position,
+                to: new_position,
+                revolute: true,
+            };
+            move_range.push(rm);
+        }
     }
 
     pub fn can_capture_king(
