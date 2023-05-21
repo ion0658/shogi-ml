@@ -65,8 +65,12 @@ async fn game_task(pool: sqlx::SqlitePool, inf: Arc<Inference>) -> Result<()> {
             }
         } else {
             match game.next()? {
-                GameState::Checkmate(_) => {
-                    println!("You Win");
+                GameState::Checkmate(color) => {
+                    if color == player_color {
+                        println!("You Win");
+                    } else {
+                        println!("You Lose");
+                    }
                     game.print();
                     break;
                 }

@@ -7,7 +7,7 @@ import os
 BOARD_SIZE = 9
 BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 4
 MODEL_DIR = "model/model"
-EPOCHS = 20
+EPOCHS = 5
 
 def load_game_data():
     dbname = "db/data.db"
