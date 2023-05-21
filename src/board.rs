@@ -167,15 +167,7 @@ pub fn create_move_range(boards: &Boards, turn: Color) -> Vec<LegalMove> {
                             },
                             &boards[0],
                         );
-                        // 打ち歩詰めを除外する
-                        let m_range = m_range
-                            .par_iter()
-                            .filter(|&r| {
-                                let boards = move_piece(*boards, *r);
-                                is_checkmate(&boards, turn.opponent())
-                            })
-                            .cloned()
-                            .collect();
+
                         move_ranges = concat_vec(move_ranges, m_range);
                         break 'outer;
                     }
@@ -194,15 +186,7 @@ pub fn create_move_range(boards: &Boards, turn: Color) -> Vec<LegalMove> {
                             },
                             &boards[0],
                         );
-                        // 打ち歩詰めを除外する
-                        let m_range = m_range
-                            .par_iter()
-                            .filter(|&r| {
-                                let boards = move_piece(*boards, *r);
-                                is_checkmate(&boards, turn.opponent())
-                            })
-                            .cloned()
-                            .collect();
+
                         move_ranges = concat_vec(move_ranges, m_range);
                         break 'outer;
                     }

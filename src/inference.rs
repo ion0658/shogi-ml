@@ -1,10 +1,9 @@
 use crate::{
-    board::{is_checkmate, Boards, BOARD_SIZE, PAGE_SIZE},
+    board::{Boards, BOARD_SIZE, PAGE_SIZE},
     piece::{Color, PieceType},
 };
 use anyhow::Result;
 use rand::prelude::*;
-use rayon::prelude::*;
 use tensorflow::{
     Graph, Operation, SavedModelBundle, Session, SessionOptions, SessionRunArgs, Tensor,
 };
@@ -55,14 +54,6 @@ impl Inference {
     }
 
     pub fn select_best_board(&self, boards: &[Boards], turn: Color, mode: bool) -> Result<Boards> {
-        let checkmate_boards = boards
-            .par_iter()
-            .filter(|boards| is_checkmate(boards, turn.opponent()))
-            .collect::<Vec<_>>();
-
-        if let Some(&boards) = checkmate_boards.first() {
-            return Ok(boards.clone());
-        }
         let mut rng = rand::thread_rng();
 
         if let (Some(session), Some(input_node), Some(output_node)) =
