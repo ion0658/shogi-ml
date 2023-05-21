@@ -20,6 +20,7 @@ impl Inference {
         let model_path = "model/model";
         let path = std::path::Path::new(model_path);
         let i = if path.exists() {
+            println!("load model");
             let (session, input_node, output_node) = Self::init_session(model_path)?;
             Self {
                 session: Some(session),
@@ -27,6 +28,7 @@ impl Inference {
                 output_node: Some(output_node),
             }
         } else {
+            println!("load model failed");
             Self {
                 session: None,
                 input_node: None,
