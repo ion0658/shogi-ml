@@ -47,12 +47,12 @@ async fn game_task(pool: sqlx::SqlitePool, inf: Arc<Inference>) -> Result<u128> 
         }
     }
     let elapsed = start.elapsed();
-    // println!(
-    //     "Game finished in {:?} with {} moves {} [(micro sec)/move]",
-    //     elapsed,
-    //     count,
-    //     elapsed.as_micros() / count
-    // );
+    println!(
+        "Game finished in {:?} with {} moves {} [(micro sec)/move]",
+        elapsed,
+        count,
+        elapsed.as_micros() / count
+    );
     game.save().await?;
 
     Ok(elapsed.as_micros() / count)

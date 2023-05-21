@@ -2,8 +2,8 @@ use std::{sync::Arc, vec};
 
 use crate::{
     board::{
-        create_initial_board, create_move_range, get_num_array, is_checked, is_checkmate,
-        move_piece, print_boards, Boards, LegalMove,
+        create_initial_board, create_move_range, get_num_array, is_checked, move_piece,
+        print_boards, Boards, LegalMove,
     },
     inference::Inference,
     piece::{Color, Piece},
@@ -63,25 +63,7 @@ impl Game {
 
     pub fn next(&mut self) -> Result<GameState> {
         let move_range = create_move_range(&self.boards, self.turn);
-        let checkmate_boards = move_range
-            .par_iter()
-            .filter_map(|range| {
-                let boards = move_piece(self.boards, *range);
-                if is_checkmate(&boards, self.turn.opponent()) {
-                    Some(boards)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
 
-        // 詰められるときはそれを使う
-        if let Some(checkmate_board) = checkmate_boards.first() {
-            self.boards = *checkmate_board;
-            self.boards_record.push(*checkmate_board);
-            self.turn = self.turn.opponent();
-            return Ok(GameState::Playing);
-        }
         // 王手が解除できない or 自殺手は除外
         let next_boards = move_range
             .par_iter()
