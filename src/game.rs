@@ -63,15 +63,23 @@ impl Game {
 
     pub fn next(&mut self) -> Result<GameState> {
         let move_range = create_move_range(&self.boards, self.turn);
-
-        let checkmate_boards = move_range
+        let legal_boards = move_range
             .par_iter()
             .filter_map(|range| {
+                let boards = move_piece(self.boards, *range);
                 // 打ち歩詰めは除外
-                if range.from.z == 1 && (range.from.y < 2 || range.from.y > BOARD_SIZE as i32 - 2) {
+                if range.from.z == 1
+                    && (range.from.y < 2 || range.from.y > BOARD_SIZE as i32 - 2)
+                    && is_checkmate(&boards, self.turn.opponent())
+                {
                     return None;
                 }
-                let boards = move_piece(self.boards, *range);
+                Some(boards)
+            })
+            .collect::<Vec<_>>();
+        let checkmate_boards = legal_boards
+            .par_iter()
+            .filter_map(|&boards| {
                 if is_checkmate(&boards, self.turn.opponent()) {
                     Some(boards)
                 } else {
@@ -89,10 +97,9 @@ impl Game {
         }
 
         // 王手が解除できない or 自殺手は除外
-        let next_boards = move_range
+        let next_boards = legal_boards
             .par_iter()
-            .filter_map(|range| {
-                let boards = move_piece(self.boards, *range);
+            .filter_map(|&boards| {
                 let checked = is_checked(&boards[0], self.turn);
                 if checked {
                     None
@@ -125,7 +132,11 @@ impl Game {
             .par_iter()
             .filter(|&range| {
                 let boards = move_piece(self.boards, *range);
-                !is_checked(&boards[0], self.turn)
+                // 自殺手・打ち歩詰めは除外
+                !(range.from.z == 1
+                    && (range.from.y < 2 || range.from.y > BOARD_SIZE as i32 - 2)
+                    && is_checkmate(&boards, self.turn.opponent()))
+                    && !is_checked(&boards[0], self.turn)
             })
             .cloned()
             .collect::<Vec<_>>();
