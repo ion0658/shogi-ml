@@ -296,15 +296,10 @@ impl Piece {
         };
         match (self.piece_type, self.color) {
             (PieceType::Pawn | PieceType::Lance, Color::Black)
-                if m.to.y != BOARD_SIZE as i32 - 1 =>
-            {
-                move_range.push(m)
-            }
-            (PieceType::Pawn | PieceType::Lance, Color::White) if m.to.y != 0 => move_range.push(m),
-            (PieceType::Knight, Color::Black) if m.to.y < BOARD_SIZE as i32 - 2 => {
-                move_range.push(m)
-            }
-            (PieceType::Knight, Color::White) if m.to.y > 1 => move_range.push(m),
+                if m.to.y == BOARD_SIZE as i32 - 1 => {}
+            (PieceType::Pawn | PieceType::Lance, Color::White) if m.to.y == 0 => {}
+            (PieceType::Knight, Color::Black) if m.to.y >= BOARD_SIZE as i32 - 2 => {}
+            (PieceType::Knight, Color::White) if m.to.y <= 1 => {}
             _ => move_range.push(m),
         }
         if m.can_revolte(self.color) && self.can_revolte() {
