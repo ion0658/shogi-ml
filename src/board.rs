@@ -137,41 +137,279 @@ fn create_initial_board_white(mut board: Board) -> Board {
 
 // ボード上の駒の移動範囲を生成する関数
 pub fn create_move_range(boards: &Boards, turn: Color) -> Vec<LegalMove> {
-    boards
+    let mut move_ranges = boards[0]
         .par_iter()
         .enumerate()
-        .flat_map(|(z, move_range_z)| {
-            let ranges = vec![];
-            let new_ranges = move_range_z
-                .par_iter()
+        .flat_map(|(y, row)| {
+            row.par_iter()
                 .enumerate()
-                .flat_map(|(y, row)| {
-                    let ranges = vec![];
-                    let new_ranges = row
-                        .par_iter()
-                        .enumerate()
-                        .filter(|(_, piece)| piece.is_some() && piece.unwrap().color == turn)
-                        .flat_map(|(x, piece)| {
-                            let range = if z == 0 {
-                                piece.unwrap().create_move_range(
-                                    Position::new(x as i32, y as i32, z as i32),
-                                    &boards[0],
-                                )
-                            } else {
-                                piece.unwrap().create_put_range(
-                                    Position::new(x as i32, y as i32, z as i32),
-                                    &boards[0],
-                                )
-                            };
-                            range
-                        })
-                        .collect();
-                    concat_vec(ranges, new_ranges)
+                .filter(|(_, piece)| piece.is_some() && piece.unwrap().color == turn)
+                .flat_map(|(x, piece)| {
+                    piece
+                        .unwrap()
+                        .create_move_range(Position::new(x as i32, y as i32, 0), &boards[0])
                 })
-                .collect();
-            concat_vec(ranges, new_ranges)
+                .collect::<Vec<_>>()
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    // 歩を打つ手を生成する関数
+    match turn {
+        Color::Black => {
+            'outer: for y in (0..2).rev() {
+                for x in (0..BOARD_SIZE).rev() {
+                    if let Some(put_piece) = boards[1][y][x] {
+                        let m_range = put_piece.create_put_range(
+                            Position {
+                                x: x as i32,
+                                y: y as i32,
+                                z: 1,
+                            },
+                            &boards[0],
+                        );
+                        move_ranges = concat_vec(move_ranges, m_range);
+                        break 'outer;
+                    }
+                }
+            }
+        }
+        Color::White => {
+            'outer: for y in BOARD_SIZE - 2..BOARD_SIZE {
+                for x in 0..BOARD_SIZE {
+                    if let Some(put_piece) = boards[1][y][x] {
+                        let m_range = put_piece.create_put_range(
+                            Position {
+                                x: x as i32,
+                                y: y as i32,
+                                z: 1,
+                            },
+                            &boards[0],
+                        );
+                        move_ranges = concat_vec(move_ranges, m_range);
+                        break 'outer;
+                    }
+                }
+            }
+        }
+    }
+
+    // 金を打つ手を生成する関数
+    match turn {
+        Color::Black => {
+            for x in (0..4).rev() {
+                if let Some(p) = boards[1][2][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 2,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+        Color::White => {
+            for x in BOARD_SIZE - 4..BOARD_SIZE {
+                if let Some(p) = boards[1][6][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 6,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 銀を打つ手を生成する関数
+    match turn {
+        Color::Black => {
+            for x in (4..8).rev() {
+                if let Some(p) = boards[1][2][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 2,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+        Color::White => {
+            for x in BOARD_SIZE - 8..BOARD_SIZE - 4 {
+                if let Some(p) = boards[1][6][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 6,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 桂を打つ手を生成する関数
+    match turn {
+        Color::Black => {
+            for x in (0..4).rev() {
+                if let Some(p) = boards[1][3][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 3,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+        Color::White => {
+            for x in BOARD_SIZE - 4..BOARD_SIZE {
+                if let Some(p) = boards[1][5][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 5,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 香を打つ手を生成する関数
+    match turn {
+        Color::Black => {
+            for x in (4..8).rev() {
+                if let Some(p) = boards[1][3][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 3,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+        Color::White => {
+            for x in BOARD_SIZE - 8..BOARD_SIZE - 4 {
+                if let Some(p) = boards[1][5][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 5,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 角行を打つ手を生成する関数
+    match turn {
+        Color::Black => {
+            for x in (0..2).rev() {
+                if let Some(p) = boards[1][4][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 4,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+        Color::White => {
+            for x in BOARD_SIZE - 2..BOARD_SIZE {
+                if let Some(p) = boards[1][4][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 4,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 飛車を打つ手を生成する関数
+    match turn {
+        Color::Black => {
+            for x in (2..4).rev() {
+                if let Some(p) = boards[1][4][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 4,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+        Color::White => {
+            for x in BOARD_SIZE - 4..BOARD_SIZE - 2 {
+                if let Some(p) = boards[1][4][x] {
+                    let m_range = p.create_put_range(
+                        Position {
+                            x: x as i32,
+                            y: 4,
+                            z: 1,
+                        },
+                        &boards[0],
+                    );
+                    move_ranges = concat_vec(move_ranges, m_range);
+                    break;
+                }
+            }
+        }
+    }
+
+    move_ranges
 }
 
 #[allow(unused)]
