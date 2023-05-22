@@ -1,5 +1,9 @@
 use anyhow::Result;
-use shogi_alg::{db::get_connection, game::*, inference::Inference};
+use shogi_alg::{
+    db::get_connection,
+    game::*,
+    inference::{GameMode, Inference},
+};
 use std::{env, sync::Arc, time::Duration};
 
 #[tokio::main]
@@ -30,7 +34,7 @@ async fn train_task(pool: sqlx::sqlite::SqlitePool, game_number: usize) -> Resul
 }
 
 async fn game_task(pool: sqlx::SqlitePool) -> Result<Duration> {
-    let inf: Arc<Inference> = Arc::new(Inference::init()?);
+    let inf: Arc<Inference> = Arc::new(Inference::init(GameMode::Train)?);
     let mut game = Game::new(pool, inf);
     let start = std::time::Instant::now();
     loop {

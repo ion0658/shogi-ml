@@ -9,6 +9,7 @@ use crate::{
     piece::{Color, Piece},
 };
 use anyhow::Result;
+use rand::rngs::ThreadRng;
 use rayon::prelude::*;
 
 pub enum GameState {
@@ -22,6 +23,7 @@ pub struct Game {
     inference: Arc<Inference>,
     boards_record: Vec<Boards>,
     pool: sqlx::SqlitePool,
+    rng: ThreadRng,
 }
 
 impl Game {
@@ -34,6 +36,7 @@ impl Game {
             inference,
             boards_record: vec![],
             pool,
+            rng: rand::thread_rng(),
         }
     }
     #[allow(unused)]
@@ -120,7 +123,9 @@ impl Game {
             return Ok(GameState::Checkmate(self.turn));
         }
         // 打てる手の中から最善を選択
-        let best_boards = self.inference.select_best_board(&next_boards, self.turn)?;
+        let best_boards =
+            self.inference
+                .select_best_board(&next_boards, self.turn, &mut self.rng)?;
 
         // 盤面の更新
         self.boards = best_boards;
@@ -132,7 +137,7 @@ impl Game {
     pub fn get_legal_moves(&self) -> Result<Vec<(Piece, LegalMove)>, GameState> {
         let move_range = create_move_range(&self.boards, self.turn);
         let moves = move_range
-            .par_iter()
+            .iter()
             .filter(|&range| {
                 let boards = move_piece(self.boards, *range);
                 // 自殺手・打ち歩詰めは除外
@@ -147,7 +152,7 @@ impl Game {
             return Err(GameState::Checkmate(self.turn.opponent()));
         }
         let moves = moves
-            .par_iter()
+            .iter()
             .map(|m| {
                 let p =
                     self.boards[m.from.z as usize][m.from.y as usize][m.from.x as usize].unwrap();

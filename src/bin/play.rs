@@ -1,5 +1,10 @@
 use anyhow::Result;
-use shogi_alg::{db::get_connection, game::*, inference::Inference, piece::Color};
+use shogi_alg::{
+    db::get_connection,
+    game::*,
+    inference::{GameMode, Inference},
+    piece::Color,
+};
 use std::{io::Write, sync::Arc};
 
 #[tokio::main]
@@ -9,7 +14,7 @@ async fn main() -> Result<()> {
 }
 
 async fn run() -> Result<()> {
-    let inference = Arc::new(Inference::init()?);
+    let inference = Arc::new(Inference::init(GameMode::Play)?);
     let pool = get_connection().await?;
     sqlx::migrate!().run(&pool).await?;
 

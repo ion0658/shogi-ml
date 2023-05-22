@@ -4,18 +4,24 @@ use crate::{
 };
 use anyhow::Result;
 use rand::prelude::*;
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tensorflow::{
     Graph, Operation, SavedModelBundle, Session, SessionOptions, SessionRunArgs, Tensor,
 };
 
+pub enum GameMode {
+    Train,
+    Play,
+}
 pub struct Inference {
     session: Option<Session>,
     input_node: Option<Operation>,
     output_node: Option<Operation>,
+    mode: GameMode,
 }
 
 impl Inference {
-    pub fn init() -> Result<Self> {
+    pub fn init(mode: GameMode) -> Result<Self> {
         let model_path = "model/model";
         let path = std::path::Path::new(model_path);
         let i = if path.exists() {
@@ -25,6 +31,7 @@ impl Inference {
                 session: Some(session),
                 input_node: Some(input_node),
                 output_node: Some(output_node),
+                mode,
             }
         } else {
             println!("load model failed");
@@ -32,6 +39,7 @@ impl Inference {
                 session: None,
                 input_node: None,
                 output_node: None,
+                mode,
             }
         };
         Ok(i)
@@ -53,13 +61,74 @@ impl Inference {
         Ok((session, input_node, output_node))
     }
 
-    pub fn select_best_board(&self, boards: &[Boards], turn: Color) -> Result<Boards> {
-        let mut rng = rand::thread_rng();
+    pub fn select_best_board(
+        &self,
+        boards: &[Boards],
+        turn: Color,
+        rng: &mut ThreadRng,
+    ) -> Result<Boards> {
+        match self.mode {
+            GameMode::Play => self.select_board_for_play(boards, turn, rng),
+            GameMode::Train => self.select_board_for_train(boards, turn, rng),
+        }
+    }
 
+    fn select_board_for_play(
+        &self,
+        boards: &[Boards],
+        turn: Color,
+        rng: &mut ThreadRng,
+    ) -> Result<Boards> {
         if let (Some(session), Some(input_node), Some(output_node)) =
             (&self.session, &self.input_node, &self.output_node)
         {
-            let index = Self::inference(turn, boards, session, input_node, output_node)?;
+            let board_list = Self::inference(boards, session, input_node, output_node)?;
+
+            let (index, _) = board_list
+                .par_iter()
+                .max_by(|(_, a_t), (_, b_t)| {
+                    println!("turn: {:?}, a: {:?}, b: {:?}", turn, a_t, b_t);
+                    if turn == Color::Black {
+                        a_t[0].partial_cmp(&b_t[0]).unwrap()
+                    } else {
+                        a_t[1].partial_cmp(&b_t[1]).unwrap()
+                    }
+                })
+                .cloned()
+                .unwrap();
+            Ok(boards[index].clone())
+        } else {
+            let len = boards.len();
+            let index = rng.gen_range(0..len);
+            Ok(boards[index].clone())
+        }
+    }
+
+    fn select_board_for_train(
+        &self,
+        boards: &[Boards],
+        turn: Color,
+        rng: &mut ThreadRng,
+    ) -> Result<Boards> {
+        if let (Some(session), Some(input_node), Some(output_node)) =
+            (&self.session, &self.input_node, &self.output_node)
+        {
+            let mut board_list = Self::inference(boards, session, input_node, output_node)?;
+            board_list.sort_by(|(_, a_t), (_, b_t)| {
+                if turn == Color::Black {
+                    a_t[0].partial_cmp(&b_t[0]).unwrap()
+                } else {
+                    a_t[1].partial_cmp(&b_t[1]).unwrap()
+                }
+            });
+            let len = if board_list.len() > 10 {
+                10
+            } else {
+                board_list.len()
+            };
+            let board_list = board_list[0..len].to_vec();
+            let len = board_list.len();
+            let index = rng.gen_range(0..len);
             Ok(boards[index].clone())
         } else {
             let len = boards.len();
@@ -69,12 +138,11 @@ impl Inference {
     }
 
     fn inference(
-        turn: Color,
         boards: &[Boards],
         session: &Session,
         input_node: &Operation,
         output_node: &Operation,
-    ) -> Result<usize> {
+    ) -> Result<Vec<(usize, [f32; 2])>> {
         let boards = boards
             .iter()
             .map(|board| get_num_array(board))
@@ -97,14 +165,12 @@ impl Inference {
 
         // 出力Tensorの取得
         let output_tensor = args.fetch::<f32>(output_token)?;
-        let (max_winrate_index, _) = output_tensor
+        let result = output_tensor
             .chunks(2)
             .map(|chunk| [chunk[0], chunk[1]])
             .enumerate()
-            .max_by(|(_, a), (_, b)| a[turn as usize].partial_cmp(&b[turn as usize]).unwrap())
-            .unwrap_or_default();
-
-        Ok(max_winrate_index)
+            .collect();
+        Ok(result)
     }
 }
 
