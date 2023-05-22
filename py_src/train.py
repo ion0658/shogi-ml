@@ -7,7 +7,7 @@ import os
 BOARD_SIZE = 9
 BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 4
 MODEL_DIR = "model/model"
-EPOCHS = 5
+EPOCHS = 10 
 
 def load_game_data():
     dbname = "db/data.db"
@@ -22,21 +22,18 @@ def load_game_data():
     y = []
     black_win_count = 0
     game_count = 0
-    data_count = 0
     for row in game_data:
         (winner, binary) = row
         array_1d = np.frombuffer(binary, dtype=np.uint8)
         record = array_1d.reshape(
             [int(len(array_1d) / BOARD_SQ_SIZE), BOARD_SIZE, BOARD_SIZE, 4]
         )
-        data_count += int(len(array_1d) / BOARD_SQ_SIZE)
         if winner == 0:
             black_win_count += 1
         game_count += 1
         for board in record:
             x.append(board)
             y.append(winner)
-    print("data count: ", data_count)
     print("black winrate: {}%".format(black_win_count / game_count * 100))
     X = np.array(x)
     X = X / 14
