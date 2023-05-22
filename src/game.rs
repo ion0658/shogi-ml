@@ -98,12 +98,22 @@ impl Game {
         let next_boards = legal_boards
             .par_iter()
             .filter(|&boards| {
-                !is_checked(&boards[0], self.turn)
-                    && self.boards_record.iter().filter(|&r| r == boards).count() <= 3
+                if is_checked(&boards[0], self.turn) {
+                    return false;
+                }
+                if self.boards_record.iter().find(|&r| r == boards).is_some() {
+                    return false;
+                }
+                true
             })
             .cloned()
             .collect::<Vec<_>>();
 
+        next_boards.par_iter().for_each(|b| {
+            if self.boards_record.iter().find(|&r| r == b).is_some() {
+                println!("千日手含む");
+            }
+        });
         // 打てる手がない場合は詰み
         if next_boards.len() == 0 {
             self.turn = self.turn.opponent();

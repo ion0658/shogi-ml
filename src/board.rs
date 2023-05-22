@@ -616,7 +616,7 @@ pub fn print_boards(boards: &Boards) {
         board_data.push_str("|\n");
     }
     board_data.push_str(&format!("{:->92}\n|{:>19}後  手{:>19}|\n", "", "", "",));
-    board_data.push_str(&format!("{:->92}\n", "",));
+    board_data.push_str(&format!("{:->92}", "",));
     println!("{}", board_data);
     let piece_count = get_piece_count(boards);
     println!("piece count: {:?}", piece_count);

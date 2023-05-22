@@ -9,40 +9,11 @@ BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 4
 MODEL_DIR = "model/model"
 EPOCHS = 5
 
-physical_devices = tf.config.list_physical_devices("GPU")
-if len(physical_devices) > 0:
-    try:
-        for dev in physical_devices:
-            tf.config.experimental.set_memory_growth(dev, True)
-            tf.config.set_logical_device_configuration(
-                dev,
-                [tf.config.LogicalDeviceConfiguration(memory_limit=4096)])
-        logical_gpus = tf.config.list_logical_devices('GPU')
-        print(len(physical_devices), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-    except RuntimeError as e:
-        # Virtual devices must be set before GPUs have been initialized
-        print(e)
-
-else:
-    print("Not enough GPU hardware devices available")
-
-
-def get_data_count():
+def load_game_data():
     dbname = "db/data.db"
     conn = sqlite3.connect(dbname)
     cur = conn.cursor()
-    sql = "SELECT COUNT(*) FROM KIFU"
-    cur.execute(sql)
-    data_count = cur.fetchone()
-    cur.close()
-    conn.close()
-    return data_count[0]
-
-def load_game_data(start=0, count=1024):
-    dbname = "db/data.db"
-    conn = sqlite3.connect(dbname)
-    cur = conn.cursor()
-    sql = "SELECT WINNER, RECORDS FROM KIFU WHERE ID>{} LIMIT {}".format(start, count)
+    sql = "SELECT WINNER, RECORDS FROM KIFU"
     cur.execute(sql)
     game_data = cur.fetchall()
     cur.close()
@@ -130,18 +101,14 @@ def show_graph(history):
     # グラフ表示
     plt.show()
 
-all_data_count = get_data_count()
-chunk_data_count = 1024
-chunk = 1
-chunk += all_data_count // chunk_data_count
+x, y = load_game_data()
 
-for i in range(chunk):
-    x, y = load_game_data(i*chunk_data_count, chunk_data_count)
+model = load_model()
+model.summary()
 
-    model = load_model()
-    model.summary()
+# 学習開始
+history = model.fit(x, y, epochs=EPOCHS, validation_split=0.2)
+model.save(MODEL_DIR)
+# show_graph(history)
 
-    # 学習開始
-    history = model.fit(x, y, epochs=EPOCHS, validation_split=0.2)
-    model.save(MODEL_DIR)
-    # show_graph(history)
+os.remove("db/data.db")
