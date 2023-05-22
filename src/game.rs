@@ -22,12 +22,11 @@ pub struct Game {
     inference: Arc<Inference>,
     boards_record: Vec<Boards>,
     pool: sqlx::SqlitePool,
-    mode: bool,
 }
 
 impl Game {
     // mode true: train, false: play
-    pub fn new(mode: bool, pool: sqlx::SqlitePool, inference: Arc<Inference>) -> Self {
+    pub fn new(pool: sqlx::SqlitePool, inference: Arc<Inference>) -> Self {
         let boards = create_initial_board();
         Game {
             boards,
@@ -35,7 +34,6 @@ impl Game {
             inference,
             boards_record: vec![],
             pool,
-            mode,
         }
     }
     #[allow(unused)]
@@ -112,9 +110,7 @@ impl Game {
             return Ok(GameState::Checkmate(self.turn));
         }
         // 打てる手の中から最善を選択
-        let best_boards = self
-            .inference
-            .select_best_board(&next_boards, self.turn, self.mode)?;
+        let best_boards = self.inference.select_best_board(&next_boards, self.turn)?;
 
         // 盤面の更新
         self.boards = best_boards;

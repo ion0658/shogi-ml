@@ -27,7 +27,7 @@ async fn game_task(pool: sqlx::SqlitePool, inf: Arc<Inference>) -> Result<()> {
         _ => Color::White,
     };
 
-    let mut game = Game::new(false, pool, inf);
+    let mut game = Game::new(pool, inf);
     loop {
         if player_color == game.current_turn() {
             let moves = game.get_legal_moves();

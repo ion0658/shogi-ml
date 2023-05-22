@@ -31,7 +31,7 @@ async fn train_task(pool: sqlx::sqlite::SqlitePool, game_number: usize) -> Resul
 
 async fn game_task(pool: sqlx::SqlitePool) -> Result<Duration> {
     let inf: Arc<Inference> = Arc::new(Inference::init()?);
-    let mut game = Game::new(true, pool, inf);
+    let mut game = Game::new(pool, inf);
     let start = std::time::Instant::now();
     loop {
         match game.next()? {
