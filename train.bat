@@ -1,6 +1,6 @@
 @echo off
 set GAMES=1
-set EPOCHS=5
+set EPOCHS=100
 
 for /l %%i in (0, 1, %EPOCHS%) do (
     echo "EPOCH %%i"

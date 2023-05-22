@@ -447,8 +447,7 @@ pub fn move_piece(mut boards: Boards, legal_move: LegalMove) -> Boards {
         return boards;
     }
     // 駒を取った場合の処理
-    let piece = current_piece.unwrap();
-    let mut piece = piece.revolute_back();
+    let mut piece = current_piece.unwrap().revolute_back();
     piece.color = piece.color.opponent();
     match (piece.piece_type, piece.color) {
         (PieceType::Pawn, Color::Black) => {
