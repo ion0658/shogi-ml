@@ -55,7 +55,7 @@ impl Game {
             .collect::<Vec<_>>();
         let record = records.as_slice().concat().concat().concat();
         let query = sqlx::query("INSERT INTO KIFU (WINNER, RECORDS) VALUES (?, ?)")
-            .bind(self.turn.opponent() as i8)
+            .bind(self.turn as i8)
             .bind(&record);
         query.execute(&self.pool).await?;
         Ok(())
@@ -92,28 +92,25 @@ impl Game {
         if let Some(checkmate_board) = checkmate_boards.first() {
             self.boards = *checkmate_board;
             self.boards_record.push(*checkmate_board);
-            self.turn = self.turn.opponent();
+            println!("turn: {:?}", self.turn);
             return Ok(GameState::Checkmate(self.turn));
         }
 
-        // 王手が解除できない or 自殺手は除外
+        // 王手が解除できない or 自殺手は除外 or 千日手
         let next_boards = legal_boards
             .par_iter()
-            .filter_map(|&boards| {
-                let checked = is_checked(&boards[0], self.turn);
-                if checked {
-                    None
-                } else {
-                    Some(boards)
-                }
+            .filter(|&boards| {
+                !is_checked(&boards[0], self.turn)
+                    && self.boards_record.iter().filter(|&r| r == boards).count() <= 3
             })
+            .cloned()
             .collect::<Vec<_>>();
 
         // 打てる手がない場合は詰み
         if next_boards.len() == 0 {
-            return Ok(GameState::Checkmate(self.turn.opponent()));
+            self.turn = self.turn.opponent();
+            return Ok(GameState::Checkmate(self.turn));
         }
-
         // 打てる手の中から最善を選択
         let best_boards = self
             .inference

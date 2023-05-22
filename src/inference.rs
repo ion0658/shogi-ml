@@ -53,16 +53,16 @@ impl Inference {
         Ok((session, input_node, output_node))
     }
 
-    pub fn select_best_board(&self, boards: &[Boards], turn: Color, mode: bool) -> Result<Boards> {
+    pub fn select_best_board(&self, boards: &[Boards], turn: Color, _mode: bool) -> Result<Boards> {
         let mut rng = rand::thread_rng();
 
         if let (Some(session), Some(input_node), Some(output_node)) =
             (&self.session, &self.input_node, &self.output_node)
         {
-            if !mode || rng.gen_ratio(1, 2) {
-                let index = Self::inference(turn, boards, session, input_node, output_node)?;
-                return Ok(boards[index].clone());
-            }
+            //if !mode || !rng.gen_ratio(1, 3) {
+            let index = Self::inference(turn, boards, session, input_node, output_node)?;
+            return Ok(boards[index].clone());
+            //}
         }
         let len = boards.len();
         let index = rng.gen_range(0..len);

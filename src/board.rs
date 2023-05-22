@@ -447,7 +447,8 @@ pub fn move_piece(mut boards: Boards, legal_move: LegalMove) -> Boards {
         return boards;
     }
     // 駒を取った場合の処理
-    let mut piece = current_piece.unwrap();
+    let piece = current_piece.unwrap();
+    let mut piece = piece.revolute_back();
     piece.color = piece.color.opponent();
     match (piece.piece_type, piece.color) {
         (PieceType::Pawn, Color::Black) => {
@@ -618,6 +619,8 @@ pub fn print_boards(boards: &Boards) {
     board_data.push_str(&format!("{:->92}\n|{:>19}後  手{:>19}|\n", "", "", "",));
     board_data.push_str(&format!("{:->92}\n", "",));
     println!("{}", board_data);
+    let piece_count = get_piece_count(boards);
+    println!("piece count: {:?}", piece_count);
 }
 
 // 二歩判定
