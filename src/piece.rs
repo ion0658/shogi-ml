@@ -24,7 +24,7 @@ pub enum PieceType {
 }
 
 impl PieceType {
-    pub fn get_max() -> u8 {
+    pub const fn get_max() -> u8 {
         Self::PromotedPawn as u8
     }
 }
@@ -78,11 +78,11 @@ impl Piece {
         Piece { piece_type, color }
     }
 
-    pub fn get_u8(&self) -> u8 {
+    pub const fn get_u8(&self) -> u8 {
         self.piece_type as u8
     }
 
-    pub fn can_revolte(&self) -> bool {
+    pub const fn can_revolte(&self) -> bool {
         match self.piece_type {
             PieceType::Silver
             | PieceType::Knight
@@ -325,7 +325,7 @@ impl Piece {
     }
 }
 
-fn calc_delta(v: i32) -> i32 {
+const fn calc_delta(v: i32) -> i32 {
     if v == 0 {
         0
     } else {

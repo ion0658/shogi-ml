@@ -143,7 +143,7 @@ impl Inference {
             boards.len() as u64,
             BOARD_SIZE as u64,
             BOARD_SIZE as u64,
-            (PAGE_SIZE * 2) as u64,
+            (PieceType::get_max() as usize * PAGE_SIZE * 2) as u64,
         ])
         .with_values(&data)?;
 
@@ -164,28 +164,43 @@ impl Inference {
     }
 }
 
-type BoardAsNum = [[[f32; PAGE_SIZE * 2]; BOARD_SIZE]; BOARD_SIZE];
+type BoardAsNum = [[[f32; PieceType::get_max() as usize * PAGE_SIZE * 2]; BOARD_SIZE]; BOARD_SIZE];
 fn get_num_array(boards: &Boards) -> BoardAsNum {
-    let mut b: BoardAsNum = [[[0.0; 4]; BOARD_SIZE]; BOARD_SIZE];
+    let mut b: BoardAsNum =
+        [[[0.0; PieceType::get_max() as usize * PAGE_SIZE * 2]; BOARD_SIZE]; BOARD_SIZE];
     boards.iter().enumerate().for_each(|(z, board)| {
         board.iter().enumerate().for_each(|(y, row)| {
             row.iter().enumerate().for_each(|(x, p)| {
                 if let Some(piece) = p {
-                    match (piece.color, z) {
-                        (Color::Black, 0) => {
-                            b[x][y][0] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                    let z_index = (piece.get_u8() as usize
+                        + match piece.color {
+                            Color::Black => 0,
+                            Color::White => PieceType::get_max() as usize,
+                        })
+                        * match z {
+                            0 => 1,
+                            _ => 2,
                         }
-                        (Color::White, 0) => {
-                            b[x][y][1] = piece.get_u8() as f32 / PieceType::get_max() as f32
-                        }
-                        (Color::Black, _) => {
-                            b[x][y][2] = piece.get_u8() as f32 / PieceType::get_max() as f32
-                        }
-                        (Color::White, _) => {
-                            b[x][y][3] = piece.get_u8() as f32 / PieceType::get_max() as f32
-                        }
-                    }
+                        - 1;
+                    //println!("index({:?}):{}", piece, z_index);
+                    b[x][y][z_index] = 1.0;
                 }
+                // if let Some(piece) = p {
+                //     match (piece.color, z) {
+                //         (Color::Black, 0) => {
+                //             b[x][y][0] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                //         }
+                //         (Color::White, 0) => {
+                //             b[x][y][1] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                //         }
+                //         (Color::Black, _) => {
+                //             b[x][y][2] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                //         }
+                //         (Color::White, _) => {
+                //             b[x][y][3] = piece.get_u8() as f32 / PieceType::get_max() as f32
+                //         }
+                //     }
+                // }
             });
         });
     });

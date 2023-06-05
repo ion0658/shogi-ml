@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 import os
 
 BOARD_SIZE = 9
-BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 4
+PIECE_TYPES = 14
+BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 2 * 2 * PIECE_TYPES
 MODEL_DIR = "model/model"
 EPOCHS = 5
+
 
 def load_game_data():
     dbname = "db/data.db"
@@ -26,7 +28,12 @@ def load_game_data():
         (winner, binary) = row
         array_1d = np.frombuffer(binary, dtype=np.uint8)
         record = array_1d.reshape(
-            [int(len(array_1d) / BOARD_SQ_SIZE), BOARD_SIZE, BOARD_SIZE, 4]
+            [
+                int(len(array_1d) / BOARD_SQ_SIZE),
+                BOARD_SIZE,
+                BOARD_SIZE,
+                2 * 2 * PIECE_TYPES,
+            ]
         )
         if winner == 0:
             black_win_count += 1
@@ -34,9 +41,7 @@ def load_game_data():
         for board in record:
             x.append(board)
             y.append(winner)
-    print("black winrate: {}%".format(black_win_count / game_count * 100))
     X = np.array(x)
-    X = X / 14
     Y = np.array(y)
     return (X, Y)
 
@@ -52,7 +57,7 @@ def load_model():
                     64,
                     (3, 3),
                     activation="relu",
-                    input_shape=(BOARD_SIZE, BOARD_SIZE, 4),
+                    input_shape=(BOARD_SIZE, BOARD_SIZE, 2 * 2 * PIECE_TYPES),
                     name="board_in",
                 ),
                 tf.keras.layers.MaxPooling2D((2, 2)),
@@ -97,6 +102,7 @@ def show_graph(history):
 
     # グラフ表示
     plt.show()
+
 
 x, y = load_game_data()
 

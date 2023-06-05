@@ -41,7 +41,7 @@ impl Game {
         print_boards(&self.boards)
     }
 
-    pub fn current_turn(&self) -> Color {
+    pub const fn current_turn(&self) -> Color {
         self.turn
     }
 
