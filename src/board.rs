@@ -652,17 +652,8 @@ pub fn get_num_array(boards: &Boards) -> BoardAsNum {
                             _ => 2,
                         }
                         - 1;
-                    //println!("index({:?}):{}", piece, z_index);
                     b[x][y][z_index] = 1;
                 }
-                // if let Some(piece) = p {
-                //     match (piece.color, z) {
-                //         (Color::Black, 0) => b[x][y][0] = piece.get_u8(),
-                //         (Color::White, 0) => b[x][y][1] = piece.get_u8(),
-                //         (Color::Black, _) => b[x][y][2] = piece.get_u8(),
-                //         (Color::White, _) => b[x][y][3] = piece.get_u8(),
-                //     }
-                // }
             });
         });
     });

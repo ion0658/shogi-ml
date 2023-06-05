@@ -22,10 +22,13 @@ async fn game_task(pool: sqlx::SqlitePool) -> Result<Duration> {
     let start = std::time::Instant::now();
     loop {
         match game.next()? {
-            GameState::Checkmate(_color) => {
+            GameState::Checkmate(color) => {
+                println!("{:?} win", color);
                 break;
             }
-            _ => {}
+            _ => {
+                game.print();
+            }
         }
     }
     let elapsed = start.elapsed();

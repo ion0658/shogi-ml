@@ -56,6 +56,7 @@ impl Game {
             .bind(self.turn as i8)
             .bind(&record);
         query.execute(&self.pool).await?;
+        self.inference.train(&self.boards_record, self.turn)?;
         Ok(())
     }
 
@@ -90,7 +91,6 @@ impl Game {
         if let Some(checkmate_board) = checkmate_boards.first() {
             self.boards = *checkmate_board;
             self.boards_record.push(*checkmate_board);
-            println!("turn: {:?}", self.turn);
             return Ok(GameState::Checkmate(self.turn));
         }
 
