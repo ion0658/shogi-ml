@@ -5,17 +5,16 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [profile.release]
-lto = false
+lto = true
 
 [dependencies]
 anyhow = "1.0.71"
 chrono = "0.4.24"
 futures = "0.3.28"
-num_cpus = "1.15.0"
 rand = { version = "0.8.5", features = ["std", "std_rng"] }
 rayon = "1.7.0"
 serde = { version = "1.0.163", features = ["derive"] }
 sqlx = { version = "0.6.3", default-features = false, features = ["sqlite", "runtime-tokio-rustls", "macros", "migrate"] }
-tensorflow = { version = "0.19.1", features = ["tensorflow_gpu", "ndarray"] }
+tensorflow = { version = "0.19.1", features = ["tensorflow_gpu", "ndarray", "eager", "tensorflow_unstable"] }
 tokio = { version = "1.28.1", features = ["full"] }
 

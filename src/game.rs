@@ -9,7 +9,6 @@ use crate::{
     piece::{Color, Piece},
 };
 use anyhow::Result;
-use rand::rngs::ThreadRng;
 use rayon::prelude::*;
 
 pub enum GameState {
@@ -23,7 +22,6 @@ pub struct Game {
     inference: Arc<Inference>,
     boards_record: Vec<Boards>,
     pool: sqlx::SqlitePool,
-    rng: ThreadRng,
 }
 
 impl Game {
@@ -36,7 +34,6 @@ impl Game {
             inference,
             boards_record: vec![],
             pool,
-            rng: rand::thread_rng(),
         }
     }
     #[allow(unused)]
@@ -123,9 +120,7 @@ impl Game {
             return Ok(GameState::Checkmate(self.turn));
         }
         // 打てる手の中から最善を選択
-        let best_boards =
-            self.inference
-                .select_best_board(&next_boards, self.turn, &mut self.rng)?;
+        let best_boards = self.inference.select_best_board(&next_boards, self.turn)?;
 
         // 盤面の更新
         self.boards = best_boards;

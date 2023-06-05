@@ -1,9 +1,9 @@
 @echo off
-set GAMES=32
-set EPOCHS=100
+set GAMES=1
+set EPOCHS=100000
 
 for /l %%i in (0, 1, %EPOCHS%) do (
     echo "EPOCH %%i"
-    cargo run --release --bin train %GAMES%
+    .\target\release\train.exe %GAMES%
     python .\py_src\train.py
 )
