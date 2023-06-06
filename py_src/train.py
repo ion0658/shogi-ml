@@ -63,7 +63,13 @@ def load_model():
                 tf.keras.layers.MaxPooling2D((2, 2)),
                 tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
                 tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(128, activation="relu"),
+                tf.keras.layers.Dropout(rate=0.2),
+                tf.keras.layers.Flatten(),
                 tf.keras.layers.Dense(64, activation="relu"),
+                tf.keras.layers.Dropout(rate=0.2),
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(32, activation="relu"),
                 tf.keras.layers.Dropout(rate=0.2),
                 tf.keras.layers.Dense(2, activation="softmax", name="winner_out"),
             ]

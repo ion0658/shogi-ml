@@ -56,7 +56,7 @@ impl Game {
             .bind(self.turn as i8)
             .bind(&record);
         query.execute(&self.pool).await?;
-        self.inference.train(&self.boards_record, self.turn)?;
+        //self.inference.train(&self.boards_record, self.turn)?;
         Ok(())
     }
 

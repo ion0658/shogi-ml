@@ -24,11 +24,10 @@ async fn game_task(pool: sqlx::SqlitePool) -> Result<Duration> {
         match game.next()? {
             GameState::Checkmate(color) => {
                 println!("{:?} win", color);
+                game.print();
                 break;
             }
-            _ => {
-                game.print();
-            }
+            _ => {}
         }
     }
     let elapsed = start.elapsed();
