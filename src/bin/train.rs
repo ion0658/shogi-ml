@@ -1,5 +1,5 @@
 use anyhow::Result;
-use shogi_alg::{db::get_connection, game::*, inference::Inference};
+use shogi_alg::{db::get_connection, game::*, inference::Inference, piece::Color};
 use std::{sync::Arc, time::Duration};
 
 #[tokio::main]
@@ -12,26 +12,49 @@ async fn main() -> Result<()> {
 }
 
 async fn train_task(pool: sqlx::sqlite::SqlitePool) -> Result<()> {
-    let _elapsed = game_task(pool.clone()).await?;
+    game_task(pool.clone()).await?;
     Ok(())
 }
 
-async fn game_task(pool: sqlx::SqlitePool) -> Result<Duration> {
+async fn game_task(pool: sqlx::SqlitePool) -> Result<()> {
     let inf: Arc<Inference> = Arc::new(Inference::init()?);
     let mut game = Game::new(pool, inf);
-    let start = std::time::Instant::now();
+    let mut black_hand_time = Duration::from_secs(10);
+    let mut white_hand_time = Duration::from_secs(10);
+    let mut start_black = std::time::Instant::now();
+    let mut start_white = std::time::Instant::now();
     loop {
-        match game.next()? {
-            GameState::Checkmate(color) => {
-                println!("{:?} win", color);
-                game.print();
+        let result = game.next()?;
+        match game.current_turn() {
+            Color::Black => {
+                let elapsed: Duration = start_white.elapsed();
+                if white_hand_time < elapsed {
+                    println!("white handtime is out!");
+                    break;
+                }
+                white_hand_time -= elapsed;
+                start_black = std::time::Instant::now();
+            }
+            Color::White => {
+                let elapsed = start_black.elapsed();
+                if black_hand_time < elapsed {
+                    println!("black handtime is out!");
+                    break;
+                }
+                black_hand_time -= elapsed;
+                start_white = std::time::Instant::now();
+            }
+        }
+        match result {
+            GameState::Checkmate(_color) => {
                 break;
             }
             _ => {}
         }
     }
-    let elapsed = start.elapsed();
+    game.print();
+    println!("{:?} win", game.current_turn());
     game.save().await?;
 
-    Ok(elapsed)
+    Ok(())
 }
