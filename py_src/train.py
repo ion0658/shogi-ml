@@ -42,6 +42,7 @@ def load_game_data():
             x.append(board)
             y.append(winner)
     X = np.array(x)
+    X = X / 1.0
     Y = np.array(y)
     return (X, Y)
 
@@ -70,6 +71,8 @@ def load_model():
                 tf.keras.layers.Dropout(rate=0.2),
                 tf.keras.layers.Flatten(),
                 tf.keras.layers.Dense(32, activation="relu"),
+                tf.keras.layers.Dropout(rate=0.2),
+                tf.keras.layers.Dense(16, activation="relu"),
                 tf.keras.layers.Dropout(rate=0.2),
                 tf.keras.layers.Dense(2, activation="softmax", name="winner_out"),
             ]
@@ -111,12 +114,17 @@ def show_graph(history):
 
 
 x, y = load_game_data()
+BATCH_SIZE = 128
+TRAIN_SIZE = int(0.8 * len(x))
+TRAIN_DATA = tf.data.Dataset.from_tensor_slices((x, y)).shuffle(x.shape[0])
+train_data = TRAIN_DATA.take(TRAIN_SIZE).batch(BATCH_SIZE)  # 訓練データの8割を学習用に用いて、バッチを生成
+val_data = TRAIN_DATA.skip(TRAIN_SIZE).batch(BATCH_SIZE)  # 訓練データの2割を検証用に用いて、バッチ生成
 
 model = load_model()
 model.summary()
 
 # 学習開始
-history = model.fit(x, y, epochs=EPOCHS, validation_split=0.2)
+history = model.fit(train_data, validation_data=val_data, epochs=EPOCHS)
 model.save(MODEL_DIR)
 # show_graph(history)
 

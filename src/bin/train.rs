@@ -19,8 +19,9 @@ async fn train_task(pool: sqlx::sqlite::SqlitePool) -> Result<()> {
 async fn game_task(pool: sqlx::SqlitePool) -> Result<()> {
     let inf: Arc<Inference> = Arc::new(Inference::init()?);
     let mut game = Game::new(pool, inf);
-    let mut black_hand_time = Duration::from_secs(10);
-    let mut white_hand_time = Duration::from_secs(10);
+    let mut hand_count: usize = 1;
+    let mut black_hand_time = Duration::from_secs(100);
+    let mut white_hand_time = Duration::from_secs(100);
     let mut start_black = std::time::Instant::now();
     let mut start_white = std::time::Instant::now();
     loop {
@@ -49,11 +50,13 @@ async fn game_task(pool: sqlx::SqlitePool) -> Result<()> {
             GameState::Checkmate(_color) => {
                 break;
             }
-            _ => {}
+            _ => {
+                hand_count += 1;
+            }
         }
     }
     game.print();
-    println!("{:?} win", game.current_turn());
+    println!("{:?} win.({} hands)", game.current_turn(), hand_count);
     game.save().await?;
 
     Ok(())
