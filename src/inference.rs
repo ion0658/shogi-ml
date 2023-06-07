@@ -3,6 +3,7 @@ use crate::{
     piece::{Color, PieceType},
 };
 use anyhow::Result;
+use rand::Rng;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tensorflow::{Graph, SavedModelBundle, SessionOptions, SessionRunArgs, Tensor};
 
@@ -32,6 +33,10 @@ impl Inference {
         Ok(i)
     }
 
+    pub fn is_use_model(&self) -> bool {
+        self.graph.is_some() && self.bundle.is_some()
+    }
+
     pub fn init_session(file_name: &str) -> Result<(Graph, SavedModelBundle)> {
         let mut graph = Graph::new();
         let bundle =
@@ -57,7 +62,9 @@ impl Inference {
                 .unwrap();
             Ok(boards[index].clone())
         } else {
-            Ok(boards[0].clone())
+            let rng = &mut rand::thread_rng();
+            let index = rng.gen_range(0..boards.len());
+            Ok(boards[index])
         }
     }
 

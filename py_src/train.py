@@ -8,7 +8,7 @@ BOARD_SIZE = 9
 PIECE_TYPES = 14
 BOARD_SQ_SIZE = BOARD_SIZE * BOARD_SIZE * 2 * 2 * PIECE_TYPES
 MODEL_DIR = "model/model"
-EPOCHS = 5
+EPOCHS = 20
 
 
 def load_game_data():
