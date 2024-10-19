@@ -14,7 +14,7 @@ futures = "0.3.28"
 rand = { version = "0.8.5", features = ["std", "std_rng"] }
 rayon = "1.7.0"
 serde = { version = "1.0.163", features = ["derive"] }
-sqlx = { version = "0.6.3", default-features = false, features = ["sqlite", "runtime-tokio-rustls", "macros", "migrate"] }
+sqlx = { version = "0.8.1", default-features = false, features = ["sqlite", "runtime-tokio-rustls", "macros", "migrate"] }
 tensorflow = { version = "0.19.1", features = ["tensorflow_gpu"] }
 tokio = { version = "1.28.1", features = ["full"] }
 
